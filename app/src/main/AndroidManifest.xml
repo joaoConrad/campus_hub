@@ -11,10 +11,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CampusHub">
+
         <activity
-            android:name=".MainActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
+            android:name=".LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".RegisterActivity" android:exported="false" />
+        <activity android:name=".ForgotPasswordActivity" android:exported="false" />
+        <activity android:name=".EventsActivity" android:exported="false" />
+        <activity android:name=".EventDetailsActivity" android:exported="false" />
+        <activity android:name=".MyEventsActivity" android:exported="false" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
     </application>
 
 </manifest>
