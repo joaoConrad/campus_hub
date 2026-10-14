@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="categorias">
+        <item>Todas</item>
+        <item>Palestra</item>
+        <item>Workshop</item>
+        <item>Esporte</item>
+        <item>Cultural</item>
+    </string-array>
+
+    <string-array name="situacoes">
+        <item>Todos</item>
+        <item>Próximos</item>
+        <item>Encerrados</item>
+    </string-array>
+</resources>

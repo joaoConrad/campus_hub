@@ -18,6 +18,12 @@
             android:layout_marginTop="70sp"/>
 
         <TextView
+            android:id="@+id/tvCategoriaDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Categoria" />
+
+        <TextView
             android:id="@+id/tvDescricaoDetalhe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,6 +55,12 @@
             android:layout_height="wrap_content"
             android:text="Vagas restantes" />
 
+        <TextView
+            android:id="@+id/tvMediaDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Avaliação média: sem avaliações" />
+
         <Button
             android:id="@+id/btnInscrever"
             android:layout_width="match_parent"
@@ -57,9 +69,80 @@
             android:text="Inscrever-se" />
 
         <Button
+            android:id="@+id/btnFavoritar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Favoritar" />
+
+        <LinearLayout
+            android:id="@+id/layoutAvaliacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sua avaliação"
+                android:textSize="18sp" />
+
+            <RatingBar
+                android:id="@+id/ratingBarAvaliacao"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:numStars="5"
+                android:stepSize="1" />
+
+            <Button
+                android:id="@+id/btnAvaliar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enviar avaliação" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Comentários"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/editComentario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Escreva um comentário"
+            android:inputType="textMultiLine"
+            android:minLines="2" />
+
+        <Button
+            android:id="@+id/btnComentar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Publicar comentário" />
+
+        <TextView
+            android:id="@+id/tvNenhumComentario"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Nenhum comentário ainda"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerComentarios"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" />
+
+        <Button
             android:id="@+id/btnVoltar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:text="Voltar" />
 
     </LinearLayout>

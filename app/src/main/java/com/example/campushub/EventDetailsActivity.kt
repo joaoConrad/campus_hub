@@ -24,6 +24,7 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var tvHorario: TextView
     private lateinit var tvLocal: TextView
     private lateinit var tvVagas: TextView
+    private lateinit var tvCategoria: TextView
     private lateinit var btnInscrever: Button
 
     private lateinit var btnVoltar: Button
@@ -48,6 +49,7 @@ class EventDetailsActivity : AppCompatActivity() {
         tvHorario = findViewById(R.id.tvHorarioDetalhe)
         tvLocal = findViewById(R.id.tvLocalDetalhe)
         tvVagas = findViewById(R.id.tvVagasDetalhe)
+        tvCategoria = findViewById(R.id.tvCategoriaDetalhe)
         btnInscrever = findViewById(R.id.btnInscrever)
 
         btnVoltar = findViewById(R.id.btnVoltar)
@@ -88,7 +90,7 @@ class EventDetailsActivity : AppCompatActivity() {
                     finish()
                 } else {
                     mostrarEvento(evento)
-                    verificarInscricao(evento.vagas)
+                    verificarInscricao(evento)
                 }
             }
             .addOnFailureListener { erro ->
@@ -103,6 +105,7 @@ class EventDetailsActivity : AppCompatActivity() {
         val dataHora = evento.dataHora?.toDate()
 
         tvTitulo.text = evento.titulo
+        tvCategoria.text = "Categoria: ${evento.categoria}"
         tvDescricao.text = evento.descricao
         tvData.text = "Data: " + (dataHora?.let { formatoData.format(it) } ?: "a definir")
         tvHorario.text = "Horário: " + (dataHora?.let { formatoHora.format(it) } ?: "a definir")
@@ -110,24 +113,28 @@ class EventDetailsActivity : AppCompatActivity() {
         tvVagas.text = "Vagas restantes: ${evento.vagas}"
     }
 
-    private fun verificarInscricao(vagas: Int) {
+    private fun verificarInscricao(evento: Event) {
         regRef.get()
             .addOnSuccessListener { documento ->
                 inscrito = documento.exists()
-                atualizarBotao(vagas)
+                atualizarBotao(evento)
             }
             .addOnFailureListener { erro ->
                 Toast.makeText(this, "Erro ao verificar inscrição: ${erro.message}", Toast.LENGTH_LONG).show()
             }
     }
 
-    private fun atualizarBotao(vagas: Int) {
+    private fun atualizarBotao(evento: Event) {
         when {
+            evento.estaEncerrado() -> {
+                btnInscrever.text = "Evento encerrado"
+                btnInscrever.isEnabled = false
+            }
             inscrito -> {
                 btnInscrever.text = "Cancelar inscrição"
                 btnInscrever.isEnabled = true
             }
-            vagas > 0 -> {
+            evento.vagas > 0 -> {
                 btnInscrever.text = "Inscrever-se"
                 btnInscrever.isEnabled = true
             }
@@ -146,6 +153,14 @@ class EventDetailsActivity : AppCompatActivity() {
             val eventoDoc = transaction.get(eventRef)
             val inscricaoDoc = transaction.get(regRef)
             val vagas = eventoDoc.getLong("vagas") ?: 0L
+
+            val dataHora = eventoDoc.getTimestamp("dataHora")?.toDate()
+            if (dataHora != null && dataHora.before(java.util.Date())) {
+                throw FirebaseFirestoreException(
+                    "Este evento já foi encerrado",
+                    FirebaseFirestoreException.Code.ABORTED
+                )
+            }
 
             if (inscricaoDoc.exists()) {
                 throw FirebaseFirestoreException(

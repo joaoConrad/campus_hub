@@ -26,11 +26,47 @@
             android:text="Meus eventos" />
 
         <Button
+            android:id="@+id/btnFavoritos"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Favoritos" />
+
+        <Button
             android:id="@+id/btnPerfil"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Perfil" />
+
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/editBusca"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Buscar por título"
+        android:inputType="text"
+        android:maxLines="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/spinnerCategoria"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:entries="@array/categorias" />
+
+        <Spinner
+            android:id="@+id/spinnerSituacao"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:entries="@array/situacoes" />
 
     </LinearLayout>
 
@@ -55,7 +91,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Nenhum evento disponível"
+            android:text="Nenhum evento encontrado"
             android:visibility="gone" />
 
     </FrameLayout>
