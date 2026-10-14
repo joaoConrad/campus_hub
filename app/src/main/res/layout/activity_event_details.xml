@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvTituloDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Título do evento"
+            android:textSize="24sp"
+            android:layout_marginTop="70sp"/>
+
+        <TextView
+            android:id="@+id/tvDescricaoDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Descrição" />
+
+        <TextView
+            android:id="@+id/tvDataDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Data" />
+
+        <TextView
+            android:id="@+id/tvHorarioDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Horário" />
+
+        <TextView
+            android:id="@+id/tvLocalDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Local" />
+
+        <TextView
+            android:id="@+id/tvVagasDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vagas restantes" />
+
+        <Button
+            android:id="@+id/btnInscrever"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Inscrever-se" />
+
+        <Button
+            android:id="@+id/btnVoltar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Voltar" />
+
+    </LinearLayout>
+</ScrollView>
