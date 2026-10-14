@@ -5,7 +5,11 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -25,6 +29,12 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var btnVoltar: Button
 
     private var eventId: String = ""
+    private var uid: String = ""
+
+    private var inscrito = false
+
+    private lateinit var eventRef: DocumentReference
+    private lateinit var regRef: DocumentReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,12 +56,23 @@ class EventDetailsActivity : AppCompatActivity() {
             finish()
         }
 
+        val usuario = FirebaseAuth.getInstance().currentUser
         eventId = intent.getStringExtra("eventId") ?: ""
 
-        if (eventId.isEmpty()) {
+        if (usuario == null || eventId.isEmpty()) {
             Toast.makeText(this, "Evento não encontrado", Toast.LENGTH_SHORT).show()
             finish()
             return
+        }
+        uid = usuario.uid
+
+        eventRef = db.collection("events").document(eventId)
+        regRef = db.collection("registrations").document("${uid}_$eventId")
+
+        btnInscrever.isEnabled = false
+
+        btnInscrever.setOnClickListener {
+            if (inscrito) cancelarInscricao() else inscrever()
         }
 
         carregarEvento()
@@ -67,6 +88,7 @@ class EventDetailsActivity : AppCompatActivity() {
                     finish()
                 } else {
                     mostrarEvento(evento)
+                    verificarInscricao(evento.vagas)
                 }
             }
             .addOnFailureListener { erro ->
@@ -86,5 +108,105 @@ class EventDetailsActivity : AppCompatActivity() {
         tvHorario.text = "Horário: " + (dataHora?.let { formatoHora.format(it) } ?: "a definir")
         tvLocal.text = "Local: ${evento.local}"
         tvVagas.text = "Vagas restantes: ${evento.vagas}"
+    }
+
+    private fun verificarInscricao(vagas: Int) {
+        regRef.get()
+            .addOnSuccessListener { documento ->
+                inscrito = documento.exists()
+                atualizarBotao(vagas)
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, "Erro ao verificar inscrição: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun atualizarBotao(vagas: Int) {
+        when {
+            inscrito -> {
+                btnInscrever.text = "Cancelar inscrição"
+                btnInscrever.isEnabled = true
+            }
+            vagas > 0 -> {
+                btnInscrever.text = "Inscrever-se"
+                btnInscrever.isEnabled = true
+            }
+            else -> {
+                btnInscrever.text = "Esgotado"
+                btnInscrever.isEnabled = false
+            }
+        }
+    }
+
+    private fun inscrever() {
+        btnInscrever.isEnabled = false
+
+        db.runTransaction { transaction ->
+
+            val eventoDoc = transaction.get(eventRef)
+            val inscricaoDoc = transaction.get(regRef)
+            val vagas = eventoDoc.getLong("vagas") ?: 0L
+
+            if (inscricaoDoc.exists()) {
+                throw FirebaseFirestoreException(
+                    "Você já está inscrito neste evento",
+                    FirebaseFirestoreException.Code.ABORTED
+                )
+            }
+            if (vagas <= 0) {
+                throw FirebaseFirestoreException(
+                    "As vagas deste evento esgotaram",
+                    FirebaseFirestoreException.Code.ABORTED
+                )
+            }
+
+            transaction.update(eventRef, "vagas", vagas - 1)
+            transaction.set(
+                regRef,
+                hashMapOf(
+                    "userId" to uid,
+                    "eventId" to eventId,
+                    "dataInscricao" to FieldValue.serverTimestamp()
+                )
+            )
+            null
+        }
+            .addOnSuccessListener {
+                Toast.makeText(this, "Inscrição realizada!", Toast.LENGTH_SHORT).show()
+                carregarEvento()
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, erro.message, Toast.LENGTH_LONG).show()
+                carregarEvento()
+            }
+    }
+
+    private fun cancelarInscricao() {
+        btnInscrever.isEnabled = false
+
+        db.runTransaction { transaction ->
+            val eventoDoc = transaction.get(eventRef)
+            val inscricaoDoc = transaction.get(regRef)
+            val vagas = eventoDoc.getLong("vagas") ?: 0L
+
+            if (!inscricaoDoc.exists()) {
+                throw FirebaseFirestoreException(
+                    "Você não está inscrito neste evento",
+                    FirebaseFirestoreException.Code.ABORTED
+                )
+            }
+
+            transaction.update(eventRef, "vagas", vagas + 1)
+            transaction.delete(regRef)
+            null
+        }
+            .addOnSuccessListener {
+                Toast.makeText(this, "Inscrição cancelada", Toast.LENGTH_SHORT).show()
+                carregarEvento()
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, erro.message, Toast.LENGTH_LONG).show()
+                carregarEvento()
+            }
     }
 }

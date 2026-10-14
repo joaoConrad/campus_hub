@@ -10,7 +10,8 @@
         android:layout_height="wrap_content"
         android:padding="8dp"
         android:text="Meus eventos"
-        android:textSize="24sp" />
+        android:textSize="24sp"
+        android:layout_marginTop="70sp"/>
 
     <FrameLayout
         android:layout_width="match_parent"
