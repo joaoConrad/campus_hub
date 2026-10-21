@@ -30,6 +30,7 @@ class EventsActivity : AppCompatActivity() {
         progressEventos = findViewById(R.id.progressEventos)
         tvNenhumEvento = findViewById(R.id.tvNenhumEvento)
         val btnMeusEventos = findViewById<Button>(R.id.btnMeusEventos)
+        val btnFavoritos = findViewById<Button>(R.id.btnFavoritos)
         val btnPerfil = findViewById<Button>(R.id.btnPerfil)
 
         adapter = EventAdapter { evento ->
@@ -46,7 +47,12 @@ class EventsActivity : AppCompatActivity() {
         btnPerfil.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
+        btnFavoritos.setOnClickListener {
+            startActivity(Intent(this, FavoritesActivity::class.java))
+        }
     }
+
+
 
     override fun onResume() {
         super.onResume()

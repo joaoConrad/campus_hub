@@ -1,84 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="8dp">
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:text="Eventos disponíveis"
-        android:textSize="24sp"
-        android:layout_marginTop="70sp"/>
+    android:background="@color/surface_background"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp">
 
-        <Button
-            android:id="@+id/btnMeusEventos"
-            android:layout_width="0dp"
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Meus eventos" />
+            android:text="Eventos"
+            android:textColor="@color/text_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnFavoritos"
-            android:layout_width="0dp"
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Favoritos" />
+            android:layout_marginTop="2dp"
+            android:text="Descubra o que está rolando no campus"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
 
-        <Button
-            android:id="@+id/btnPerfil"
-            android:layout_width="0dp"
+        <EditText
+            android:id="@+id/editBusca"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Perfil" />
+            android:layout_marginTop="16dp"
+            android:hint="Buscar por título"
+            android:inputType="text"
+            android:maxLines="1" />
 
-    </LinearLayout>
-
-    <EditText
-        android:id="@+id/editBusca"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Buscar por título"
-        android:inputType="text"
-        android:maxLines="1" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Spinner
-            android:id="@+id/spinnerCategoria"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:entries="@array/categorias" />
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
 
-        <Spinner
-            android:id="@+id/spinnerSituacao"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:entries="@array/situacoes" />
+            <Spinner
+                android:id="@+id/spinnerCategoria"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:entries="@array/categorias" />
 
+            <Spinner
+                android:id="@+id/spinnerSituacao"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:entries="@array/situacoes" />
+        </LinearLayout>
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="8dp"
         android:layout_weight="1">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerEventos"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="16dp" />
 
         <ProgressBar
             android:id="@+id/progressEventos"
@@ -92,8 +89,66 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="Nenhum evento encontrado"
+            android:textColor="@color/text_secondary"
             android:visibility="gone" />
-
     </FrameLayout>
+
+    <!-- Linha fina separando a lista da barra -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/outline_variant" />
+
+    <!-- Barra de botões embaixo -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/surface_card"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <Button
+            android:id="@+id/btnMeusEventos"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="Meus eventos"
+            android:textSize="13sp"
+            app:cornerRadius="14dp" />
+
+        <Button
+            android:id="@+id/btnFavoritos"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="Favoritos"
+            android:textSize="13sp"
+            app:cornerRadius="14dp" />
+
+        <Button
+            android:id="@+id/btnPerfil"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="Perfil"
+            android:textSize="13sp"
+            app:cornerRadius="14dp" />
+    </LinearLayout>
 
 </LinearLayout>

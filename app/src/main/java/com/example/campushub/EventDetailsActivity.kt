@@ -36,6 +36,9 @@ class EventDetailsActivity : AppCompatActivity() {
 
     private lateinit var eventRef: DocumentReference
     private lateinit var regRef: DocumentReference
+    private lateinit var btnFavoritar: Button
+    private lateinit var favRef: DocumentReference
+    private var favoritado = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,8 +54,11 @@ class EventDetailsActivity : AppCompatActivity() {
         tvVagas = findViewById(R.id.tvVagasDetalhe)
         tvCategoria = findViewById(R.id.tvCategoriaDetalhe)
         btnInscrever = findViewById(R.id.btnInscrever)
+        btnFavoritar = findViewById(R.id.btnFavoritar)
+
 
         btnVoltar = findViewById(R.id.btnVoltar)
+        btnFavoritar = findViewById(R.id.btnFavoritar)
 
         btnVoltar.setOnClickListener {
             finish()
@@ -70,6 +76,10 @@ class EventDetailsActivity : AppCompatActivity() {
 
         eventRef = db.collection("events").document(eventId)
         regRef = db.collection("registrations").document("${uid}_$eventId")
+        favRef = db.collection("favorites").document("${uid}_$eventId")
+
+        btnFavoritar.isEnabled = false
+        btnFavoritar.setOnClickListener { alternarFavorito() }
 
         btnInscrever.isEnabled = false
 
@@ -78,6 +88,7 @@ class EventDetailsActivity : AppCompatActivity() {
         }
 
         carregarEvento()
+        verificarFavorito()
     }
 
     private fun carregarEvento() {
@@ -223,5 +234,55 @@ class EventDetailsActivity : AppCompatActivity() {
                 Toast.makeText(this, erro.message, Toast.LENGTH_LONG).show()
                 carregarEvento()
             }
+    }
+
+    private fun verificarFavorito() {
+        favRef.get()
+            .addOnSuccessListener { documento ->
+                favoritado = documento.exists()
+                atualizarBotaoFavorito()
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, "Erro ao verificar favorito: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun atualizarBotaoFavorito() {
+        btnFavoritar.text = if (favoritado) "Remover dos favoritos" else "Favoritar"
+        btnFavoritar.isEnabled = true
+    }
+
+    private fun alternarFavorito() {
+        btnFavoritar.isEnabled = false
+
+        if (favoritado) {
+            favRef.delete()
+                .addOnSuccessListener {
+                    favoritado = false
+                    atualizarBotaoFavorito()
+                    Toast.makeText(this, "Removido dos favoritos", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { erro ->
+                    btnFavoritar.isEnabled = true
+                    Toast.makeText(this, "Erro ao remover: ${erro.message}", Toast.LENGTH_LONG).show()
+                }
+        } else {
+            favRef.set(
+                hashMapOf(
+                    "userId" to uid,
+                    "eventId" to eventId,
+                    "dataFavorito" to FieldValue.serverTimestamp()
+                )
+            )
+                .addOnSuccessListener {
+                    favoritado = true
+                    atualizarBotaoFavorito()
+                    Toast.makeText(this, "Adicionado aos favoritos", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { erro ->
+                    btnFavoritar.isEnabled = true
+                    Toast.makeText(this, "Erro ao favoritar: ${erro.message}", Toast.LENGTH_LONG).show()
+                }
+        }
     }
 }

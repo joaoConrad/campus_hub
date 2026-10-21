@@ -27,6 +27,7 @@
         <activity android:name=".EventDetailsActivity" android:exported="false" />
         <activity android:name=".MyEventsActivity" android:exported="false" />
         <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".FavoritesActivity" android:exported="false" />
     </application>
 
 </manifest>
