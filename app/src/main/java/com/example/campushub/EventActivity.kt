@@ -7,6 +7,11 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import android.text.Editable
+import android.text.TextWatcher
+import android.widget.AdapterView
+import android.widget.EditText
+import android.widget.Spinner
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,6 +24,10 @@ class EventsActivity : AppCompatActivity() {
     private lateinit var progressEventos: ProgressBar
     private lateinit var tvNenhumEvento: TextView
     private lateinit var recyclerEventos: RecyclerView
+    private var todosEventos: List<Event> = emptyList()
+    private lateinit var editBusca: EditText
+    private lateinit var spinnerCategoria: Spinner
+    private lateinit var spinnerSituacao: Spinner
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +42,7 @@ class EventsActivity : AppCompatActivity() {
         val btnFavoritos = findViewById<Button>(R.id.btnFavoritos)
         val btnPerfil = findViewById<Button>(R.id.btnPerfil)
 
+
         adapter = EventAdapter { evento ->
             val intent = Intent(this, EventDetailsActivity::class.java)
             intent.putExtra("eventId", evento.id)
@@ -40,6 +50,23 @@ class EventsActivity : AppCompatActivity() {
         }
         recyclerEventos.layoutManager = LinearLayoutManager(this)
         recyclerEventos.adapter = adapter
+
+        editBusca = findViewById(R.id.editBusca)
+        spinnerCategoria = findViewById(R.id.spinnerCategoria)
+        spinnerSituacao = findViewById(R.id.spinnerSituacao)
+
+        editBusca.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) { aplicarFiltros() }
+        })
+
+        val ouvinte = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) { aplicarFiltros() }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+        spinnerCategoria.onItemSelectedListener = ouvinte
+        spinnerSituacao.onItemSelectedListener = ouvinte
 
         btnMeusEventos.setOnClickListener {
             startActivity(Intent(this, MyEventsActivity::class.java))
@@ -71,10 +98,32 @@ class EventsActivity : AppCompatActivity() {
                 adapter.atualizar(lista)
                 progressEventos.visibility = View.GONE
                 tvNenhumEvento.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+                todosEventos = resultado.toObjects(Event::class.java)
+                progressEventos.visibility = View.GONE
+                aplicarFiltros()
             }
             .addOnFailureListener { erro ->
                 progressEventos.visibility = View.GONE
                 Toast.makeText(this, "Erro ao carregar eventos: ${erro.message}", Toast.LENGTH_LONG).show()
             }
+    }
+
+    private fun aplicarFiltros() {
+        val busca = editBusca.text.toString().trim()
+        val categoria = spinnerCategoria.selectedItem.toString()
+        val situacao = spinnerSituacao.selectedItem.toString()
+
+        val filtrados = todosEventos.filter { e ->
+            e.titulo.contains(busca, ignoreCase = true) &&
+                    (categoria == "Todas" || e.categoria.equals(categoria, ignoreCase = true)) &&
+                    when (situacao) {
+                        "Próximos" -> !e.estaEncerrado()
+                        "Encerrados" -> e.estaEncerrado()
+                        else -> true
+                    }
+        }
+
+        adapter.atualizar(filtrados)
+        tvNenhumEvento.visibility = if (filtrados.isEmpty()) View.VISIBLE else View.GONE
     }
 }
