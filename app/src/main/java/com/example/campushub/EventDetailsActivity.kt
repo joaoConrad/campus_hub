@@ -17,6 +17,7 @@ import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.widget.RatingBar
 
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
@@ -31,6 +32,11 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var tvVagas: TextView
     private lateinit var tvCategoria: TextView
     private lateinit var btnInscrever: Button
+    private lateinit var layoutAvaliacao: View
+    private lateinit var ratingBarAvaliacao: RatingBar
+    private lateinit var btnAvaliar: Button
+    private lateinit var tvMediaDetalhe: TextView
+    private lateinit var ratingRef: DocumentReference
 
     private lateinit var btnVoltar: Button
 
@@ -102,6 +108,7 @@ class EventDetailsActivity : AppCompatActivity() {
         carregarEvento()
         verificarFavorito()
         configurarComentarios()
+        configurarAvaliacao()
     }
 
     private fun carregarEvento() {
@@ -142,6 +149,7 @@ class EventDetailsActivity : AppCompatActivity() {
             .addOnSuccessListener { documento ->
                 inscrito = documento.exists()
                 atualizarBotao(evento)
+                atualizarAvaliacao(evento)
             }
             .addOnFailureListener { erro ->
                 Toast.makeText(this, "Erro ao verificar inscrição: ${erro.message}", Toast.LENGTH_LONG).show()
@@ -404,5 +412,87 @@ class EventDetailsActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+
+    private fun configurarAvaliacao() {
+        layoutAvaliacao = findViewById(R.id.layoutAvaliacao)
+        ratingBarAvaliacao = findViewById(R.id.ratingBarAvaliacao)
+        btnAvaliar = findViewById(R.id.btnAvaliar)
+        tvMediaDetalhe = findViewById(R.id.tvMediaDetalhe)
+
+        ratingRef = db.collection("ratings").document("${uid}_$eventId")
+
+        btnAvaliar.setOnClickListener { enviarAvaliacao() }
+        carregarMedia()
+    }
+
+    // Só aparece pra aluno inscrito em evento já encerrado
+    private fun atualizarAvaliacao(evento: Event) {
+        if (inscrito && evento.estaEncerrado()) {
+            layoutAvaliacao.visibility = View.VISIBLE
+            carregarMinhaNota()
+        } else {
+            layoutAvaliacao.visibility = View.GONE
+        }
+    }
+
+    private fun carregarMinhaNota() {
+        ratingRef.get()
+            .addOnSuccessListener { documento ->
+                if (documento.exists()) {
+                    ratingBarAvaliacao.rating = (documento.getLong("nota") ?: 0L).toFloat()
+                    btnAvaliar.text = "Atualizar avaliação"
+                } else {
+                    btnAvaliar.text = "Enviar avaliação"
+                }
+            }
+    }
+
+    private fun enviarAvaliacao() {
+        val nota = ratingBarAvaliacao.rating.toInt()
+        if (nota < 1 || nota > 5) {
+            Toast.makeText(this, "Escolha uma nota de 1 a 5", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        btnAvaliar.isEnabled = false
+
+        ratingRef.set(
+            hashMapOf(
+                "userId" to uid,
+                "eventId" to eventId,
+                "nota" to nota,
+                "data" to FieldValue.serverTimestamp()
+            )
+        )
+            .addOnSuccessListener {
+                btnAvaliar.isEnabled = true
+                btnAvaliar.text = "Atualizar avaliação"
+                Toast.makeText(this, "Avaliação salva!", Toast.LENGTH_SHORT).show()
+                carregarMedia()
+            }
+            .addOnFailureListener { erro ->
+                btnAvaliar.isEnabled = true
+                Toast.makeText(this, "Erro ao avaliar: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun carregarMedia() {
+        db.collection("ratings")
+            .whereEqualTo("eventId", eventId)
+            .get()
+            .addOnSuccessListener { resultado ->
+                val notas = resultado.documents.mapNotNull { it.getLong("nota") }
+                if (notas.isEmpty()) {
+                    tvMediaDetalhe.text = "Avaliação média: sem avaliações"
+                } else {
+                    val media = notas.average()
+                    val mediaTexto = String.format(Locale("pt", "BR"), "%.1f", media)
+                    tvMediaDetalhe.text = "Avaliação média: $mediaTexto (${notas.size} avaliações)"
+                }
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, "Erro ao carregar média: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
     }
 }
