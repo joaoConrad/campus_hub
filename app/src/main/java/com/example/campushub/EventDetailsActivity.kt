@@ -12,6 +12,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.view.View
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
@@ -39,6 +44,13 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var btnFavoritar: Button
     private lateinit var favRef: DocumentReference
     private var favoritado = false
+
+    private lateinit var recyclerComentarios: RecyclerView
+    private lateinit var editComentario: EditText
+    private lateinit var btnComentar: Button
+    private lateinit var tvNenhumComentario: TextView
+    private lateinit var comentariosAdapter: CommentAdapter
+    private var nomeUsuario: String = "Aluno"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +101,7 @@ class EventDetailsActivity : AppCompatActivity() {
 
         carregarEvento()
         verificarFavorito()
+        configurarComentarios()
     }
 
     private fun carregarEvento() {
@@ -284,5 +297,112 @@ class EventDetailsActivity : AppCompatActivity() {
                     Toast.makeText(this, "Erro ao favoritar: ${erro.message}", Toast.LENGTH_LONG).show()
                 }
         }
+    }
+
+    private fun configurarComentarios() {
+        recyclerComentarios = findViewById(R.id.recyclerComentarios)
+        editComentario = findViewById(R.id.editComentario)
+        btnComentar = findViewById(R.id.btnComentar)
+        tvNenhumComentario = findViewById(R.id.tvNenhumComentario)
+
+        comentariosAdapter = CommentAdapter(
+            uid,
+            { c -> editarComentario(c) },
+            { c -> excluirComentario(c) }
+        )
+        recyclerComentarios.layoutManager = LinearLayoutManager(this)
+        recyclerComentarios.adapter = comentariosAdapter
+
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { nomeUsuario = it.getString("nome") ?: "Aluno" }
+
+        btnComentar.setOnClickListener { publicarComentario() }
+        carregarComentarios()
+    }
+
+    private fun carregarComentarios() {
+        db.collection("comments")
+            .whereEqualTo("eventId", eventId)
+            .get()
+            .addOnSuccessListener { resultado ->
+                val lista = resultado.toObjects(Comment::class.java)
+                    .sortedByDescending { it.data?.seconds ?: Long.MAX_VALUE }
+                comentariosAdapter.atualizar(lista)
+                tvNenhumComentario.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, "Erro ao carregar comentários: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun publicarComentario() {
+        val texto = editComentario.text.toString().trim()
+        if (texto.isEmpty()) {
+            Toast.makeText(this, "Escreva um comentário", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        btnComentar.isEnabled = false
+
+        db.collection("comments").add(
+            hashMapOf(
+                "eventId" to eventId,
+                "autorId" to uid,
+                "autorNome" to nomeUsuario,
+                "texto" to texto,
+                "data" to FieldValue.serverTimestamp()
+            )
+        )
+            .addOnSuccessListener {
+                editComentario.text.clear()
+                btnComentar.isEnabled = true
+                carregarComentarios()
+            }
+            .addOnFailureListener { erro ->
+                btnComentar.isEnabled = true
+                Toast.makeText(this, "Erro ao comentar: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun editarComentario(c: Comment) {
+        if (c.autorId != uid) return
+
+        val campo = EditText(this)
+        campo.setText(c.texto)
+
+        AlertDialog.Builder(this)
+            .setTitle("Editar comentário")
+            .setView(campo)
+            .setPositiveButton("Salvar") { _, _ ->
+                val novo = campo.text.toString().trim()
+                if (novo.isEmpty()) {
+                    Toast.makeText(this, "O comentário não pode ficar vazio", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                db.collection("comments").document(c.id).update("texto", novo)
+                    .addOnSuccessListener { carregarComentarios() }
+                    .addOnFailureListener { erro ->
+                        Toast.makeText(this, "Erro ao editar: ${erro.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun excluirComentario(c: Comment) {
+        if (c.autorId != uid) return
+
+        AlertDialog.Builder(this)
+            .setTitle("Excluir comentário")
+            .setMessage("Deseja excluir este comentário?")
+            .setPositiveButton("Excluir") { _, _ ->
+                db.collection("comments").document(c.id).delete()
+                    .addOnSuccessListener { carregarComentarios() }
+                    .addOnFailureListener { erro ->
+                        Toast.makeText(this, "Erro ao excluir: ${erro.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 }
