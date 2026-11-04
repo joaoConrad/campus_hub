@@ -50,6 +50,19 @@
             android:text="Local" />
 
         <TextView
+            android:id="@+id/tvEnderecoDetalhe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Endereço" />
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/mapaEvento"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/tvVagasDetalhe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

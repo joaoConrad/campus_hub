@@ -11,7 +11,11 @@ data class Event(
     val dataHora: Timestamp? = null,
     val local: String = "",
     val vagas: Int = 0,
-    val categoria: String = ""
+    val categoria: String = "",
+    val endereco: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null
+
 ) {
     fun estaEncerrado(): Boolean {
         val data = dataHora?.toDate() ?: return false

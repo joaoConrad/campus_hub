@@ -18,6 +18,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.RatingBar
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
@@ -40,6 +45,9 @@ class EventDetailsActivity : AppCompatActivity() {
 
     private lateinit var btnVoltar: Button
 
+    private lateinit var mapaEvento: MapView
+    private lateinit var tvEnderecoDetalhe: TextView
+
     private var eventId: String = ""
     private var uid: String = ""
 
@@ -60,6 +68,8 @@ class EventDetailsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Configuration.getInstance().load(applicationContext, getSharedPreferences("osmdroid", MODE_PRIVATE))
+        Configuration.getInstance().userAgentValue = "CampusHub/1.0 (trabalho academico URI Santiago)"
         setContentView(R.layout.activity_event_details)
 
         db = FirebaseFirestore.getInstance()
@@ -109,6 +119,7 @@ class EventDetailsActivity : AppCompatActivity() {
         verificarFavorito()
         configurarComentarios()
         configurarAvaliacao()
+        configurarMapa()
     }
 
     private fun carregarEvento() {
@@ -142,6 +153,7 @@ class EventDetailsActivity : AppCompatActivity() {
         tvHorario.text = "Horário: " + (dataHora?.let { formatoHora.format(it) } ?: "a definir")
         tvLocal.text = "Local: ${evento.local}"
         tvVagas.text = "Vagas restantes: ${evento.vagas}"
+        mostrarLocalizacao(evento)
     }
 
     private fun verificarInscricao(evento: Event) {
@@ -494,5 +506,54 @@ class EventDetailsActivity : AppCompatActivity() {
             .addOnFailureListener { erro ->
                 Toast.makeText(this, "Erro ao carregar média: ${erro.message}", Toast.LENGTH_LONG).show()
             }
+    }
+
+    private fun configurarMapa() {
+        mapaEvento = findViewById(R.id.mapaEvento)
+        tvEnderecoDetalhe = findViewById(R.id.tvEnderecoDetalhe)
+
+        mapaEvento.setTileSource(TileSourceFactory.MAPNIK)
+        mapaEvento.setMultiTouchControls(true)
+        // Deixa mexer no mapa sem a tela rolar junto
+        mapaEvento.setOnTouchListener { v, _ ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            false
+        }
+    }
+
+    private fun mostrarLocalizacao(evento: Event) {
+        tvEnderecoDetalhe.text = "Endereço: " + evento.endereco.ifEmpty { evento.local }
+
+        val lat = evento.latitude
+        val lng = evento.longitude
+
+        if (lat == null || lng == null) {
+            mapaEvento.visibility = View.GONE
+            return
+        }
+
+        mapaEvento.visibility = View.VISIBLE
+
+        val ponto = GeoPoint(lat, lng)
+        val marcador = Marker(mapaEvento)
+        marcador.position = ponto
+        marcador.title = evento.titulo
+        marcador.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+
+        mapaEvento.overlays.clear()
+        mapaEvento.overlays.add(marcador)
+        mapaEvento.controller.setZoom(17.0)
+        mapaEvento.controller.setCenter(ponto)
+        mapaEvento.invalidate()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::mapaEvento.isInitialized) mapaEvento.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::mapaEvento.isInitialized) mapaEvento.onPause()
     }
 }
