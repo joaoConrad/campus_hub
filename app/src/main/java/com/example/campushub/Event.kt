@@ -17,8 +17,8 @@ data class Event(
     val longitude: Double? = null
 
 ) {
-    fun estaEncerrado(): Boolean {
+    fun estaEncerrado(agora: Date = Date()): Boolean {
         val data = dataHora?.toDate() ?: return false
-        return data.before(Date())
+        return data.before(agora)
     }
 }

@@ -109,19 +109,12 @@ class EventsActivity : AppCompatActivity() {
     }
 
     private fun aplicarFiltros() {
-        val busca = editBusca.text.toString().trim()
-        val categoria = spinnerCategoria.selectedItem.toString()
-        val situacao = spinnerSituacao.selectedItem.toString()
-
-        val filtrados = todosEventos.filter { e ->
-            e.titulo.contains(busca, ignoreCase = true) &&
-                    (categoria == "Todas" || e.categoria.equals(categoria, ignoreCase = true)) &&
-                    when (situacao) {
-                        "Próximos" -> !e.estaEncerrado()
-                        "Encerrados" -> e.estaEncerrado()
-                        else -> true
-                    }
-        }
+        val filtrados = EventFilter.apply(
+            todosEventos,
+            editBusca.text.toString(),
+            spinnerCategoria.selectedItem.toString(),
+            spinnerSituacao.selectedItem.toString()
+        )
 
         adapter.atualizar(filtrados)
         tvNenhumEvento.visibility = if (filtrados.isEmpty()) View.VISIBLE else View.GONE

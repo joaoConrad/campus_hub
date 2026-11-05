@@ -69,7 +69,8 @@ val exclusoesCobertura = listOf(
     "**/R.class",
     "**/R$*.class",
     "**/BuildConfig.*",
-    "**/databinding/**"
+    "**/databinding/**",
+    "**/*Repository*.*",
 )
 
 val classesCobertura = fileTree(

@@ -27,6 +27,7 @@ import org.osmdroid.views.overlay.Marker
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
 
+    private lateinit var registrations: RegistrationRepository
     private lateinit var db: FirebaseFirestore
 
     private lateinit var tvTitulo: TextView
@@ -73,6 +74,7 @@ class EventDetailsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_event_details)
 
         db = FirebaseFirestore.getInstance()
+        registrations = RegistrationRepository(db)
 
         tvTitulo = findViewById(R.id.tvTituloDetalhe)
         tvDescricao = findViewById(R.id.tvDescricaoDetalhe)
@@ -174,44 +176,7 @@ class EventDetailsActivity : AppCompatActivity() {
     private fun inscrever() {
         btnInscrever.isEnabled = false
 
-        db.runTransaction { transaction ->
-
-            val eventoDoc = transaction.get(eventRef)
-            val inscricaoDoc = transaction.get(regRef)
-            val vagas = eventoDoc.getLong("vagas") ?: 0L
-
-            val dataHora = eventoDoc.getTimestamp("dataHora")?.toDate()
-            if (dataHora != null && dataHora.before(java.util.Date())) {
-                throw FirebaseFirestoreException(
-                    "Este evento já foi encerrado",
-                    FirebaseFirestoreException.Code.ABORTED
-                )
-            }
-
-            if (inscricaoDoc.exists()) {
-                throw FirebaseFirestoreException(
-                    "Você já está inscrito neste evento",
-                    FirebaseFirestoreException.Code.ABORTED
-                )
-            }
-            if (vagas <= 0) {
-                throw FirebaseFirestoreException(
-                    "As vagas deste evento esgotaram",
-                    FirebaseFirestoreException.Code.ABORTED
-                )
-            }
-
-            transaction.update(eventRef, "vagas", vagas - 1)
-            transaction.set(
-                regRef,
-                hashMapOf(
-                    "userId" to uid,
-                    "eventId" to eventId,
-                    "dataInscricao" to FieldValue.serverTimestamp()
-                )
-            )
-            null
-        }
+        registrations.register(uid, eventId)
             .addOnSuccessListener {
                 Toast.makeText(this, "Inscrição realizada!", Toast.LENGTH_SHORT).show()
                 carregarEvento()
@@ -225,22 +190,7 @@ class EventDetailsActivity : AppCompatActivity() {
     private fun cancelarInscricao() {
         btnInscrever.isEnabled = false
 
-        db.runTransaction { transaction ->
-            val eventoDoc = transaction.get(eventRef)
-            val inscricaoDoc = transaction.get(regRef)
-            val vagas = eventoDoc.getLong("vagas") ?: 0L
-
-            if (!inscricaoDoc.exists()) {
-                throw FirebaseFirestoreException(
-                    "Você não está inscrito neste evento",
-                    FirebaseFirestoreException.Code.ABORTED
-                )
-            }
-
-            transaction.update(eventRef, "vagas", vagas + 1)
-            transaction.delete(regRef)
-            null
-        }
+        registrations.cancel(uid, eventId)
             .addOnSuccessListener {
                 Toast.makeText(this, "Inscrição cancelada", Toast.LENGTH_SHORT).show()
                 carregarEvento()
