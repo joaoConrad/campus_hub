@@ -33,8 +33,9 @@ class LoginActivity : AppCompatActivity() {
             val email = editEmail.text.toString().trim()
             val senha = editSenha.text.toString()
 
-            if (email.isEmpty() || senha.isEmpty()) {
-                Toast.makeText(this, "Preencha e-mail e senha", Toast.LENGTH_SHORT).show()
+            val erro = Validation.login(email, senha)
+            if (erro != null) {
+                Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

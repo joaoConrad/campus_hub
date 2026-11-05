@@ -36,16 +36,9 @@ class RegisterActivity : AppCompatActivity() {
             val senha = editSenha.text.toString()
             val confirmar = editConfirmarSenha.text.toString()
 
-            if (nome.isEmpty() || email.isEmpty() || curso.isEmpty() || senha.isEmpty()) {
-                Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (senha.length < 6) {
-                Toast.makeText(this, "A senha deve ter pelo menos 6 caracteres", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (senha != confirmar) {
-                Toast.makeText(this, "As senhas não conferem", Toast.LENGTH_SHORT).show()
+            val erro = Validation.register(nome, email, curso, senha, confirmar)
+            if (erro != null) {
+                Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

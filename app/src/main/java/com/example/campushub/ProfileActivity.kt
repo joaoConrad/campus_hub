@@ -78,8 +78,9 @@ class ProfileActivity : AppCompatActivity() {
         val nome = editNome.text.toString().trim()
         val curso = editCurso.text.toString().trim()
 
-        if (nome.isEmpty() || curso.isEmpty()) {
-            Toast.makeText(this, "Preencha nome e curso", Toast.LENGTH_SHORT).show()
+        val erro = Validation.profile(nome, curso)
+        if (erro != null) {
+            Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
             return
         }
 

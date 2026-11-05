@@ -24,8 +24,9 @@ class ForgotPasswordActivity : AppCompatActivity() {
         btnEnviarLink.setOnClickListener {
             val email = editEmail.text.toString().trim()
 
-            if (email.isEmpty()) {
-                Toast.makeText(this, "Digite seu e-mail", Toast.LENGTH_SHORT).show()
+            val erro = Validation.forgotPassword(email)
+            if (erro != null) {
+                Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

@@ -357,8 +357,9 @@ class EventDetailsActivity : AppCompatActivity() {
 
     private fun publicarComentario() {
         val texto = editComentario.text.toString().trim()
-        if (texto.isEmpty()) {
-            Toast.makeText(this, "Escreva um comentário", Toast.LENGTH_SHORT).show()
+        val erro = Validation.comment(texto)
+        if (erro != null) {
+            Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -395,8 +396,9 @@ class EventDetailsActivity : AppCompatActivity() {
             .setView(campo)
             .setPositiveButton("Salvar") { _, _ ->
                 val novo = campo.text.toString().trim()
-                if (novo.isEmpty()) {
-                    Toast.makeText(this, "O comentário não pode ficar vazio", Toast.LENGTH_SHORT).show()
+                val erro = Validation.commentEdit(novo)
+                if (erro != null) {
+                    Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
                 db.collection("comments").document(c.id).update("texto", novo)
@@ -462,8 +464,9 @@ class EventDetailsActivity : AppCompatActivity() {
 
     private fun enviarAvaliacao() {
         val nota = ratingBarAvaliacao.rating.toInt()
-        if (nota < 1 || nota > 5) {
-            Toast.makeText(this, "Escolha uma nota de 1 a 5", Toast.LENGTH_SHORT).show()
+        val erro = Validation.rating(nota)
+        if (erro != null) {
+            Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
             return
         }
 
