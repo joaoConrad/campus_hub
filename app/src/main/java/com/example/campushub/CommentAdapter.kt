@@ -39,10 +39,9 @@ class CommentAdapter(
 
     override fun onBindViewHolder(holder: CommentViewHolder, position: Int) {
         val c = comentarios[position]
-        val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR"))
 
         holder.tvAutor.text = c.autorNome
-        holder.tvData.text = c.data?.toDate()?.let { formato.format(it) } ?: ""
+        holder.tvData.text = Formatters.commentDate(c.data?.toDate())
         holder.tvTexto.text = c.texto
 
         val ehMeu = c.autorId == uid

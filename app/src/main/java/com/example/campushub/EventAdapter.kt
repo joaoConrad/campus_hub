@@ -35,13 +35,11 @@ class EventAdapter(
 
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
         val evento = eventos[position]
-        val formato = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale("pt", "BR"))
 
         holder.tvTitulo.text = evento.titulo
-        holder.tvData.text = evento.dataHora?.toDate()?.let { formato.format(it) } ?: "Data a definir"
+        holder.tvData.text = Formatters.dateTime(evento.dataHora?.toDate())
         holder.tvLocal.text = evento.local
-        holder.tvVagas.text = if (evento.vagas > 0) "${evento.vagas} vagas" else "Esgotado"
-
+        holder.tvVagas.text = Formatters.seats(evento.vagas)
         holder.itemView.setOnClickListener { onClick(evento) }
     }
 

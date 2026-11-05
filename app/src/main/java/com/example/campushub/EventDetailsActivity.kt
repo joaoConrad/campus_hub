@@ -141,16 +141,13 @@ class EventDetailsActivity : AppCompatActivity() {
     }
 
     private fun mostrarEvento(evento: Event) {
-        val formatoData = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("pt-BR"))
-        val formatoHora = SimpleDateFormat("HH:mm", Locale.forLanguageTag("pt-BR"))
-
         val dataHora = evento.dataHora?.toDate()
 
         tvTitulo.text = evento.titulo
         tvCategoria.text = "Categoria: ${evento.categoria}"
         tvDescricao.text = evento.descricao
-        tvData.text = "Data: " + (dataHora?.let { formatoData.format(it) } ?: "a definir")
-        tvHorario.text = "Horário: " + (dataHora?.let { formatoHora.format(it) } ?: "a definir")
+        tvData.text = "Data: " + Formatters.date(dataHora)
+        tvHorario.text = "Horário: " + Formatters.time(dataHora)
         tvLocal.text = "Local: ${evento.local}"
         tvVagas.text = "Vagas restantes: ${evento.vagas}"
         mostrarLocalizacao(evento)
@@ -169,24 +166,9 @@ class EventDetailsActivity : AppCompatActivity() {
     }
 
     private fun atualizarBotao(evento: Event) {
-        when {
-            evento.estaEncerrado() -> {
-                btnInscrever.text = "Evento encerrado"
-                btnInscrever.isEnabled = false
-            }
-            inscrito -> {
-                btnInscrever.text = "Cancelar inscrição"
-                btnInscrever.isEnabled = true
-            }
-            evento.vagas > 0 -> {
-                btnInscrever.text = "Inscrever-se"
-                btnInscrever.isEnabled = true
-            }
-            else -> {
-                btnInscrever.text = "Esgotado"
-                btnInscrever.isEnabled = false
-            }
-        }
+        val estado = ButtonState.registration(evento.estaEncerrado(), inscrito, evento.vagas)
+        btnInscrever.text = estado.text
+        btnInscrever.isEnabled = estado.enabled
     }
 
     private fun inscrever() {
@@ -498,13 +480,7 @@ class EventDetailsActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { resultado ->
                 val notas = resultado.documents.mapNotNull { it.getLong("nota") }
-                if (notas.isEmpty()) {
-                    tvMediaDetalhe.text = "Avaliação média: sem avaliações"
-                } else {
-                    val media = notas.average()
-                    val mediaTexto = String.format(Locale("pt", "BR"), "%.1f", media)
-                    tvMediaDetalhe.text = "Avaliação média: $mediaTexto (${notas.size} avaliações)"
-                }
+                tvMediaDetalhe.text = Formatters.averageText(Ratings.average(notas), notas.size)
             }
             .addOnFailureListener { erro ->
                 Toast.makeText(this, "Erro ao carregar média: ${erro.message}", Toast.LENGTH_LONG).show()
