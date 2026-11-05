@@ -66,13 +66,12 @@ dependencies {
 val exclusoesCobertura = listOf(
     "**/*Activity*.*",
     "**/*Adapter*.*",
+    "**/*Repository*.*",
     "**/R.class",
     "**/R$*.class",
     "**/BuildConfig.*",
-    "**/databinding/**",
-    "**/*Repository*.*",
+    "**/databinding/**"
 )
-
 val classesCobertura = fileTree(
     layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes")
 ) {
