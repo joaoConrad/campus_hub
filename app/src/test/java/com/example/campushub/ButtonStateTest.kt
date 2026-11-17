@@ -26,7 +26,17 @@ class ButtonStateTest {
     }
 
     @Test
-    fun registration_noSeats_isSoldOut() {
-        assertEquals(ButtonState("Esgotado", false), ButtonState.registration(false, false, 0))
+    fun registration_noSeats_canJoinWaitlist() {
+        assertEquals(ButtonState("Entrar na lista de espera", true), ButtonState.registration(false, false, 0))
+    }
+
+    @Test
+    fun registration_firstInQueueWithSeat_canConfirm() {
+        assertEquals(ButtonState("Confirmar inscrição", true), ButtonState.registration(false, false, 1, 1, true, true))
+    }
+
+    @Test
+    fun registration_waitingNotFirst_canLeave() {
+        assertEquals(ButtonState("Sair da lista de espera", true), ButtonState.registration(false, false, 1, 2, true, false))
     }
 }

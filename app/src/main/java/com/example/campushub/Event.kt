@@ -18,7 +18,8 @@ data class Event(
     val organizadorId: String = "",
     val capacidade: Int = 0,
     val status: String = EventStatus.PUBLICADO,
-    val imagem: String = ""
+    val imagem: String = "",
+    val fila: Int = 0
 ) {
     fun estaEncerrado(agora: Date = Date()): Boolean {
         if (status == EventStatus.ENCERRADO) return true
