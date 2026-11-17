@@ -33,4 +33,7 @@ object Formatters {
         val texto = String.format(ptBr, "%.1f", media)
         return "Avaliação média: $texto ($total avaliações)"
     }
+
+    fun occupancyText(inscritos: Int, capacidade: Int, checkins: Int): String =
+        "Vagas ocupadas: $inscritos de $capacidade\nCheck-ins: $checkins de $inscritos"
 }

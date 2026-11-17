@@ -68,4 +68,12 @@ class FormattersTest {
     fun averageText_withRatings_usesComma() {
         assertEquals("Avaliação média: 4,5 (2 avaliações)", Formatters.averageText(4.5, 2))
     }
+
+    @Test
+    fun occupancyText_showsSeatsAndCheckins() {
+        assertEquals(
+            "Vagas ocupadas: 3 de 10\nCheck-ins: 1 de 3",
+            Formatters.occupancyText(3, 10, 1)
+        )
+    }
 }
