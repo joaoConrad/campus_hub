@@ -50,7 +50,8 @@ class RegisterActivity : AppCompatActivity() {
                     val usuario = hashMapOf(
                         "nome" to nome,
                         "email" to email,
-                        "curso" to curso
+                        "curso" to curso,
+                        "tipo" to UserRole.ALUNO
                     )
 
                     db.collection("users").document(uid).set(usuario)

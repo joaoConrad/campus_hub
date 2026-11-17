@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.auth.FirebaseAuth
 
 class EventsActivity : AppCompatActivity() {
 
@@ -28,6 +29,8 @@ class EventsActivity : AppCompatActivity() {
     private lateinit var editBusca: EditText
     private lateinit var spinnerCategoria: Spinner
     private lateinit var spinnerSituacao: Spinner
+
+    private var tipo: String = UserRole.ALUNO
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +87,11 @@ class EventsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         carregarEventos()
+
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            db.collection("users").document(uid).get()
+                .addOnSuccessListener { tipo = UserRole.normalize(it.getString("tipo")) }
+        }
     }
 
     private fun carregarEventos() {
