@@ -29,6 +29,7 @@ class EventsActivity : AppCompatActivity() {
     private lateinit var editBusca: EditText
     private lateinit var spinnerCategoria: Spinner
     private lateinit var spinnerSituacao: Spinner
+    private lateinit var btnCriarEvento: Button
 
     private var tipo: String = UserRole.ALUNO
 
@@ -80,6 +81,11 @@ class EventsActivity : AppCompatActivity() {
         btnFavoritos.setOnClickListener {
             startActivity(Intent(this, FavoritesActivity::class.java))
         }
+
+        btnCriarEvento = findViewById(R.id.btnCriarEvento)
+        btnCriarEvento.setOnClickListener {
+            startActivity(Intent(this, EventFormActivity::class.java))
+        }
     }
 
 
@@ -90,7 +96,11 @@ class EventsActivity : AppCompatActivity() {
 
         FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
             db.collection("users").document(uid).get()
-                .addOnSuccessListener { tipo = UserRole.normalize(it.getString("tipo")) }
+                .addOnSuccessListener {
+                    tipo = UserRole.normalize(it.getString("tipo"))
+                    btnCriarEvento.visibility =
+                        if (UserRole.isOrganizador(tipo)) View.VISIBLE else View.GONE
+                }
         }
     }
 

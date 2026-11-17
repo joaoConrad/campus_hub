@@ -1,5 +1,6 @@
 package com.example.campushub
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -65,6 +66,10 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var btnComentar: Button
     private lateinit var tvNenhumComentario: TextView
     private lateinit var comentariosAdapter: CommentAdapter
+
+    private lateinit var btnEditar: Button
+
+    private lateinit var btnEncerrar: Button
     private var nomeUsuario: String = "Aluno"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,6 +122,16 @@ class EventDetailsActivity : AppCompatActivity() {
             if (inscrito) cancelarInscricao() else inscrever()
         }
 
+        btnEditar = findViewById(R.id.btnEditar)
+        btnEncerrar = findViewById(R.id.btnEncerrar)
+
+        btnEditar.setOnClickListener {
+            val intent = Intent(this, EventFormActivity::class.java)
+            intent.putExtra("eventId", eventId)
+            startActivity(intent)
+        }
+        btnEncerrar.setOnClickListener { confirmarEncerramento() }
+
         carregarEvento()
         verificarFavorito()
         configurarComentarios()
@@ -152,6 +167,10 @@ class EventDetailsActivity : AppCompatActivity() {
         tvHorario.text = "Horário: " + Formatters.time(dataHora)
         tvLocal.text = "Local: ${evento.local}"
         tvVagas.text = "Vagas restantes: ${evento.vagas}"
+        val dono = evento.organizadorId == uid
+        btnEditar.visibility = if (dono) View.VISIBLE else View.GONE
+        btnEncerrar.visibility = if (dono && !evento.estaEncerrado()) View.VISIBLE else View.GONE
+
         mostrarLocalizacao(evento)
     }
 
@@ -476,9 +495,28 @@ class EventDetailsActivity : AppCompatActivity() {
         mapaEvento.invalidate()
     }
 
+    private fun confirmarEncerramento() {
+        AlertDialog.Builder(this)
+            .setTitle("Encerrar evento")
+            .setMessage("Depois de encerrado, ninguém mais pode se inscrever. Deseja continuar?")
+            .setPositiveButton("Encerrar") { _, _ ->
+                eventRef.update("status", EventStatus.ENCERRADO)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Evento encerrado", Toast.LENGTH_SHORT).show()
+                        carregarEvento()
+                    }
+                    .addOnFailureListener { erro ->
+                        Toast.makeText(this, "Erro ao encerrar: ${erro.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
     override fun onResume() {
         super.onResume()
         if (::mapaEvento.isInitialized) mapaEvento.onResume()
+        if (eventId.isNotEmpty()) carregarEvento()
     }
 
     override fun onPause() {

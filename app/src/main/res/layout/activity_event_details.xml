@@ -87,6 +87,20 @@
             android:layout_height="wrap_content"
             android:text="Favoritar" />
 
+        <Button
+            android:id="@+id/btnEditar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Editar evento"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnEncerrar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Encerrar evento"
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/layoutAvaliacao"
             android:layout_width="match_parent"
