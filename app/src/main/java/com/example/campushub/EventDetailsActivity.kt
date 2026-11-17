@@ -19,6 +19,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.RatingBar
+import com.google.android.gms.tasks.Task
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -72,6 +73,10 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var btnEncerrar: Button
     private var nomeUsuario: String = "Aluno"
 
+    private var naFila = false
+    private var primeiroDaFila = false
+    private var eventoAtual: Event? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().load(applicationContext, getSharedPreferences("osmdroid", MODE_PRIVATE))
@@ -118,10 +123,7 @@ class EventDetailsActivity : AppCompatActivity() {
 
         btnInscrever.isEnabled = false
 
-        btnInscrever.setOnClickListener {
-            if (inscrito) cancelarInscricao() else inscrever()
-        }
-
+        btnInscrever.setOnClickListener { acaoDoBotao() }
         btnEditar = findViewById(R.id.btnEditar)
         btnEncerrar = findViewById(R.id.btnEncerrar)
 
@@ -166,7 +168,9 @@ class EventDetailsActivity : AppCompatActivity() {
         tvData.text = "Data: " + Formatters.date(dataHora)
         tvHorario.text = "Horário: " + Formatters.time(dataHora)
         tvLocal.text = "Local: ${evento.local}"
-        tvVagas.text = "Vagas restantes: ${evento.vagas}"
+        eventoAtual = evento
+        tvVagas.text = "Vagas restantes: ${evento.vagas}" +
+                if (evento.fila > 0) " · Lista de espera: ${evento.fila}" else ""
         val dono = evento.organizadorId == uid
         btnEditar.visibility = if (dono) View.VISIBLE else View.GONE
         btnEncerrar.visibility = if (dono && !evento.estaEncerrado()) View.VISIBLE else View.GONE
@@ -178,18 +182,61 @@ class EventDetailsActivity : AppCompatActivity() {
         regRef.get()
             .addOnSuccessListener { documento ->
                 inscrito = documento.exists()
-                atualizarBotao(evento)
                 atualizarAvaliacao(evento)
+                carregarFila(evento)
             }
             .addOnFailureListener { erro ->
                 Toast.makeText(this, "Erro ao verificar inscrição: ${erro.message}", Toast.LENGTH_LONG).show()
             }
     }
 
+    private fun carregarFila(evento: Event) {
+        db.collection("waitlist").whereEqualTo("eventId", eventId).get()
+            .addOnSuccessListener { resultado ->
+                val ordenados = resultado.documents
+                    .sortedBy { it.getTimestamp("data")?.seconds ?: Long.MAX_VALUE }
+                naFila = ordenados.any { it.getString("userId") == uid }
+                primeiroDaFila = ordenados.firstOrNull()?.getString("userId") == uid
+                atualizarBotao(evento)
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, "Erro ao carregar lista de espera: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
     private fun atualizarBotao(evento: Event) {
-        val estado = ButtonState.registration(evento.estaEncerrado(), inscrito, evento.vagas)
+        val estado = ButtonState.registration(
+            evento.estaEncerrado(), inscrito, evento.vagas, evento.fila, naFila, primeiroDaFila
+        )
         btnInscrever.text = estado.text
         btnInscrever.isEnabled = estado.enabled
+    }
+
+    private fun acaoDoBotao() {
+        val evento = eventoAtual ?: return
+        when {
+            inscrito -> cancelarInscricao()
+            naFila && primeiroDaFila && evento.vagas > 0 ->
+                executar(registrations.confirmFromWaitlist(uid, eventId), "Inscrição confirmada!")
+            naFila ->
+                executar(registrations.leaveWaitlist(uid, eventId), "Você saiu da lista de espera")
+            evento.vagas - evento.fila > 0 -> inscrever()
+            else ->
+                executar(registrations.joinWaitlist(uid, eventId), "Você entrou na lista de espera")
+        }
+    }
+
+    private fun executar(tarefa: Task<Void?>, sucesso: String) {
+        btnInscrever.isEnabled = false
+        tarefa
+            .addOnSuccessListener {
+                Toast.makeText(this, sucesso, Toast.LENGTH_SHORT).show()
+                carregarEvento()
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, erro.message, Toast.LENGTH_LONG).show()
+                carregarEvento()
+            }
     }
 
     private fun inscrever() {
