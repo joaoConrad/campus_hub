@@ -53,4 +53,9 @@ class EventTest {
     fun toString_containsTitle() {
         assertTrue(Event(titulo = "T").toString().contains("titulo=T"))
     }
+
+    @Test fun statusEncerradoContaComoEncerrado() {
+        val e = Event(status = EventStatus.ENCERRADO)
+        assertTrue(e.estaEncerrado())
+    }
 }

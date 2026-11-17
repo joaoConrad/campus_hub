@@ -20,7 +20,9 @@ class RegistrationRepository(private val db: FirebaseFirestore) {
             val inscricaoDoc = transaction.get(regRef)
             val vagas = eventoDoc.getLong("vagas") ?: 0L
             val dataHora = eventoDoc.getTimestamp("dataHora")?.toDate()
-            val encerrado = dataHora != null && dataHora.before(Date())
+            val status = eventoDoc.getString("status") ?: EventStatus.PUBLICADO
+            val encerrado = status == EventStatus.ENCERRADO ||
+                    (dataHora != null && dataHora.before(Date()))
 
             val problema = Registration.canRegister(encerrado, inscricaoDoc.exists(), vagas)
             if (problema != null) throw erro(problema)

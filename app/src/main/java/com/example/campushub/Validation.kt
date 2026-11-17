@@ -41,4 +41,17 @@ object Validation {
         if (nota < 1 || nota > 5) return "Escolha uma nota de 1 a 5"
         return null
     }
+
+    fun event(
+        titulo: String, descricao: String, categoria: String, endereco: String,
+        capacidade: Int?, ocupadas: Int, temData: Boolean
+    ): String? {
+        if (titulo.isBlank() || descricao.isBlank() || categoria.isBlank() || endereco.isBlank()) {
+            return "Preencha todos os campos"
+        }
+        if (!temData) return "Escolha a data do evento"
+        if (capacidade == null || capacidade <= 0) return "Informe uma capacidade válida"
+        if (capacidade < ocupadas) return "A capacidade não pode ser menor que as vagas já ocupadas"
+        return null
+    }
 }

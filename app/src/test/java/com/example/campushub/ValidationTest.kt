@@ -1,6 +1,7 @@
 package com.example.campushub
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -106,4 +107,13 @@ class ValidationTest {
         assertEquals("Escolha uma nota de 1 a 5", Validation.rating(0))
         assertEquals("Escolha uma nota de 1 a 5", Validation.rating(6))
     }
+
+    @Test fun event_valido() =
+        assertNull(Validation.event("A", "B", "Palestra", "Rua 1", 50, 0, true))
+
+    @Test fun event_capacidadeMenorQueOcupadas() =
+        assertNotNull(Validation.event("A", "B", "Palestra", "Rua 1", 5, 10, true))
+
+    @Test fun event_semData() =
+        assertEquals("Escolha a data do evento", Validation.event("A", "B", "Palestra", "Rua 1", 50, 0, false))
 }

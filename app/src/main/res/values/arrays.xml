@@ -13,4 +13,11 @@
         <item>Próximos</item>
         <item>Encerrados</item>
     </string-array>
+
+    <string-array name="categorias_evento">
+        <item>Palestra</item>
+        <item>Workshop</item>
+        <item>Esporte</item>
+        <item>Cultural</item>
+    </string-array>
 </resources>

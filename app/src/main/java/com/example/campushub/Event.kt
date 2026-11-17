@@ -14,11 +14,19 @@ data class Event(
     val categoria: String = "",
     val endereco: String = "",
     val latitude: Double? = null,
-    val longitude: Double? = null
-
+    val longitude: Double? = null,
+    val organizadorId: String = "",
+    val capacidade: Int = 0,
+    val status: String = EventStatus.PUBLICADO,
+    val imagem: String = ""
 ) {
     fun estaEncerrado(agora: Date = Date()): Boolean {
+        if (status == EventStatus.ENCERRADO) return true
         val data = dataHora?.toDate() ?: return false
         return data.before(agora)
     }
+}
+object EventStatus {
+    const val PUBLICADO = "publicado"
+    const val ENCERRADO = "encerrado"
 }

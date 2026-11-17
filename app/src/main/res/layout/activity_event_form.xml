@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvTituloForm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Criar evento"
+            android:textSize="30sp" />
+
+        <EditText
+            android:id="@+id/editTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Título"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/editDescricao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Descrição"
+            android:inputType="textMultiLine"
+            android:minLines="3" />
+
+        <Spinner
+            android:id="@+id/spinnerCategoria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:entries="@array/categorias_evento" />
+
+        <Button
+            android:id="@+id/btnData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Escolher data" />
+
+        <Button
+            android:id="@+id/btnHora"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Escolher hora" />
+
+        <EditText
+            android:id="@+id/editEndereco"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Endereço"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/editCapacidade"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Capacidade máxima"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/editImagem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Link da imagem"
+            android:inputType="textUri" />
+
+        <Button
+            android:id="@+id/btnSalvar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Salvar" />
+
+        <Button
+            android:id="@+id/btnCancelar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancelar" />
+    </LinearLayout>
+</ScrollView>
