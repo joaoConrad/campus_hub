@@ -28,12 +28,24 @@ object ImageUtils {
         return null
     }
 
-    // Converte o texto Base64 de volta em imagem (null se estiver vazio ou inválido)
-    fun toBitmap(base64: String): Bitmap? {
+    // Converte o texto Base64 em imagem. Com maxLado > 0, carrega uma miniatura menor
+    fun toBitmap(base64: String, maxLado: Int = 0): Bitmap? {
         if (base64.isBlank()) return null
         return try {
             val bytes = Base64.decode(base64, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val opcoes = BitmapFactory.Options()
+            if (maxLado > 0) {
+                val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, limites)
+                var amostra = 1
+                while (limites.outWidth / (amostra * 2) >= maxLado &&
+                    limites.outHeight / (amostra * 2) >= maxLado
+                ) {
+                    amostra *= 2
+                }
+                opcoes.inSampleSize = amostra
+            }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opcoes)
         } catch (e: IllegalArgumentException) {
             null
         }
