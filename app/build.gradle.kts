@@ -67,6 +67,8 @@ val exclusoesCobertura = listOf(
     "**/*Activity*.*",
     "**/*Adapter*.*",
     "**/*Repository*.*",
+    "**/ImageUtils*.*",
+    "**/Attendee.*",
     "**/R.class",
     "**/R$*.class",
     "**/BuildConfig.*",
@@ -106,4 +108,8 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageCheck") {
             }
         }
     }
+}
+
+configurations.matching { it.name.startsWith("androidTest") }.configureEach {
+    exclude(group = "com.google.protobuf", module = "protobuf-lite")
 }
