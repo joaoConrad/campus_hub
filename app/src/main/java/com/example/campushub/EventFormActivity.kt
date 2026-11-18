@@ -14,6 +14,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import java.util.Calendar
+import android.view.View
+import android.widget.ImageView
+import androidx.activity.result.contract.ActivityResultContracts
 
 // Tela do organizador: cria um evento novo ou edita um existente (se vier eventId)
 class EventFormActivity : AppCompatActivity() {
@@ -26,7 +29,6 @@ class EventFormActivity : AppCompatActivity() {
     private lateinit var btnHora: Button
     private lateinit var editEndereco: EditText
     private lateinit var editCapacidade: EditText
-    private lateinit var editImagem: EditText
     private lateinit var btnSalvar: Button
 
     private val cal = Calendar.getInstance()
@@ -34,6 +36,22 @@ class EventFormActivity : AppCompatActivity() {
     private var uid = ""
     private var eventId = ""
     private var eventoAtual: Event? = null
+
+    private lateinit var btnImagem: Button
+    private lateinit var imgPreview: ImageView
+    private var imagemBase64 = ""
+
+    private val escolherImagem = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val texto = ImageUtils.toBase64(this, uri)
+            if (texto == null) {
+                Toast.makeText(this, "Não foi possível usar essa imagem", Toast.LENGTH_SHORT).show()
+            } else {
+                imagemBase64 = texto
+                mostrarPreview()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,7 +71,9 @@ class EventFormActivity : AppCompatActivity() {
         btnHora = findViewById(R.id.btnHora)
         editEndereco = findViewById(R.id.editEndereco)
         editCapacidade = findViewById(R.id.editCapacidade)
-        editImagem = findViewById(R.id.editImagem)
+        btnImagem = findViewById(R.id.btnImagem)
+        imgPreview = findViewById(R.id.imgPreview)
+        btnImagem.setOnClickListener { escolherImagem.launch("image/*") }
         btnSalvar = findViewById(R.id.btnSalvar)
 
         cal.set(Calendar.SECOND, 0)
@@ -105,7 +125,8 @@ class EventFormActivity : AppCompatActivity() {
                 editDescricao.setText(e.descricao)
                 editEndereco.setText(e.endereco.ifEmpty { e.local })
                 editCapacidade.setText(e.capacidade.toString())
-                editImagem.setText(e.imagem)
+                imagemBase64 = e.imagem
+                mostrarPreview()
 
                 val categorias = resources.getStringArray(R.array.categorias_evento)
                 spinnerCategoria.setSelection(categorias.indexOf(e.categoria).coerceAtLeast(0))
@@ -126,7 +147,6 @@ class EventFormActivity : AppCompatActivity() {
         val titulo = editTitulo.text.toString().trim()
         val descricao = editDescricao.text.toString().trim()
         val endereco = editEndereco.text.toString().trim()
-        val imagem = editImagem.text.toString().trim()
         val categoria = spinnerCategoria.selectedItem.toString()
         val capacidade = editCapacidade.text.toString().trim().toIntOrNull()
         val ocupadas = eventoAtual?.let { it.capacidade - it.vagas } ?: 0
@@ -146,7 +166,7 @@ class EventFormActivity : AppCompatActivity() {
             "local" to endereco,
             "endereco" to endereco,
             "capacidade" to cap,
-            "imagem" to imagem
+            "imagem" to imagemBase64
         )
 
         btnSalvar.isEnabled = false
@@ -176,6 +196,16 @@ class EventFormActivity : AppCompatActivity() {
             }
                 .addOnSuccessListener { terminar("Evento atualizado!") }
                 .addOnFailureListener { falhar(it.message) }
+        }
+    }
+
+    private fun mostrarPreview() {
+        val bitmap = ImageUtils.toBitmap(imagemBase64)
+        if (bitmap == null) {
+            imgPreview.visibility = View.GONE
+        } else {
+            imgPreview.setImageBitmap(bitmap)
+            imgPreview.visibility = View.VISIBLE
         }
     }
 

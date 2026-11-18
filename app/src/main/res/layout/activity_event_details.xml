@@ -17,6 +17,15 @@
             android:textSize="24sp"
             android:layout_marginTop="70sp"/>
 
+        <ImageView
+            android:id="@+id/imgEvento"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Imagem do evento"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/tvCategoriaDetalhe"
             android:layout_width="match_parent"

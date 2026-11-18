@@ -71,13 +71,21 @@
             android:hint="Capacidade máxima"
             android:inputType="number" />
 
-        <EditText
-            android:id="@+id/editImagem"
+        <Button
+            android:id="@+id/btnImagem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:hint="Link da imagem"
-            android:inputType="textUri" />
+            android:text="Escolher imagem" />
+
+        <ImageView
+            android:id="@+id/imgPreview"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Imagem do evento"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/btnSalvar"

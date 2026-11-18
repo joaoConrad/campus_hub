@@ -25,6 +25,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import android.widget.ImageView
 
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
@@ -77,6 +78,8 @@ class EventDetailsActivity : AppCompatActivity() {
     private var primeiroDaFila = false
     private var eventoAtual: Event? = null
     private lateinit var btnInscritos: Button
+    private lateinit var imgEvento: ImageView
+    private var organizador = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,6 +99,7 @@ class EventDetailsActivity : AppCompatActivity() {
         tvCategoria = findViewById(R.id.tvCategoriaDetalhe)
         btnInscrever = findViewById(R.id.btnInscrever)
         btnFavoritar = findViewById(R.id.btnFavoritar)
+        imgEvento = findViewById(R.id.imgEvento)
 
 
         btnVoltar = findViewById(R.id.btnVoltar)
@@ -142,7 +146,6 @@ class EventDetailsActivity : AppCompatActivity() {
         }
         btnEncerrar.setOnClickListener { confirmarEncerramento() }
 
-        carregarEvento()
         verificarFavorito()
         configurarComentarios()
         configurarAvaliacao()
@@ -184,6 +187,14 @@ class EventDetailsActivity : AppCompatActivity() {
         btnEditar.visibility = if (dono) View.VISIBLE else View.GONE
         btnEncerrar.visibility = if (dono && !evento.estaEncerrado()) View.VISIBLE else View.GONE
 
+        val bitmap = ImageUtils.toBitmap(evento.imagem)
+        if (bitmap != null) {
+            imgEvento.setImageBitmap(bitmap)
+            imgEvento.visibility = View.VISIBLE
+        } else {
+            imgEvento.visibility = View.GONE
+        }
+
         mostrarLocalizacao(evento)
     }
 
@@ -214,9 +225,14 @@ class EventDetailsActivity : AppCompatActivity() {
     }
 
     private fun atualizarBotao(evento: Event) {
+        if (organizador) {
+            btnInscrever.visibility = View.GONE
+            return
+        }
         val estado = ButtonState.registration(
             evento.estaEncerrado(), inscrito, evento.vagas, evento.fila, naFila, primeiroDaFila
         )
+        btnInscrever.visibility = View.VISIBLE
         btnInscrever.text = estado.text
         btnInscrever.isEnabled = estado.enabled
     }
@@ -341,7 +357,11 @@ class EventDetailsActivity : AppCompatActivity() {
         recyclerComentarios.adapter = comentariosAdapter
 
         db.collection("users").document(uid).get()
-            .addOnSuccessListener { nomeUsuario = it.getString("nome") ?: "Aluno" }
+            .addOnSuccessListener {
+                nomeUsuario = it.getString("nome") ?: "Aluno"
+                organizador = UserRole.isOrganizador(it.getString("tipo"))
+                eventoAtual?.let { evento -> atualizarBotao(evento) }
+            }
 
         btnComentar.setOnClickListener { publicarComentario() }
         carregarComentarios()
