@@ -76,6 +76,7 @@ class EventDetailsActivity : AppCompatActivity() {
     private var naFila = false
     private var primeiroDaFila = false
     private var eventoAtual: Event? = null
+    private lateinit var btnInscritos: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,6 +127,13 @@ class EventDetailsActivity : AppCompatActivity() {
         btnInscrever.setOnClickListener { acaoDoBotao() }
         btnEditar = findViewById(R.id.btnEditar)
         btnEncerrar = findViewById(R.id.btnEncerrar)
+        btnInscritos = findViewById(R.id.btnInscritos)
+
+        btnInscritos.setOnClickListener {
+            val intent = Intent(this, EventAttendeesActivity::class.java)
+            intent.putExtra("eventId", eventId)
+            startActivity(intent)
+        }
 
         btnEditar.setOnClickListener {
             val intent = Intent(this, EventFormActivity::class.java)
@@ -172,6 +180,7 @@ class EventDetailsActivity : AppCompatActivity() {
         tvVagas.text = "Vagas restantes: ${evento.vagas}" +
                 if (evento.fila > 0) " · Lista de espera: ${evento.fila}" else ""
         val dono = evento.organizadorId == uid
+        btnInscritos.visibility = if (dono) View.VISIBLE else View.GONE
         btnEditar.visibility = if (dono) View.VISIBLE else View.GONE
         btnEncerrar.visibility = if (dono && !evento.estaEncerrado()) View.VISIBLE else View.GONE
 
