@@ -15,7 +15,7 @@ import java.util.TimeZone
 object TestEnv {
     private const val HOST = "10.0.2.2"
     private const val PROJECT = "campushub-d1b64"
-    private const val SENHA = "123456"
+    const val SENHA = "123456"
     private var conectado = false
 
     val db: FirebaseFirestore get() = FirebaseFirestore.getInstance()
