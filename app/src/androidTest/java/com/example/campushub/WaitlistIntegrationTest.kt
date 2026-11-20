@@ -7,6 +7,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.Assert.*
+import java.util.Date
 
 @RunWith(AndroidJUnit4::class)
 class WaitlistIntegrationTest {
