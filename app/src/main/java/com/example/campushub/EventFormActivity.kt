@@ -17,6 +17,10 @@ import java.util.Calendar
 import android.view.View
 import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.firebase.firestore.FieldValue
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 
 // Tela do organizador: cria um evento novo ou edita um existente (se vier eventId)
 class EventFormActivity : AppCompatActivity() {
@@ -171,6 +175,37 @@ class EventFormActivity : AppCompatActivity() {
 
         btnSalvar.isEnabled = false
 
+        // só procura de novo se for evento novo, se o endereço mudou ou se ainda não tinha ponto no mapa
+        val precisaBuscar = eventoAtual?.let { it.endereco != endereco || it.latitude == null } ?: true
+        if (!precisaBuscar) {
+            gravar(dados, cap)
+            return
+        }
+
+        // procura o ponto do endereço fora da thread principal e depois grava
+        Thread {
+            val coordenadas = buscarCoordenadas(endereco)
+            runOnUiThread {
+                if (coordenadas != null) {
+                    dados["latitude"] = coordenadas.first
+                    dados["longitude"] = coordenadas.second
+                } else {
+                    if (eventId.isNotEmpty()) {
+                        dados["latitude"] = FieldValue.delete()
+                        dados["longitude"] = FieldValue.delete()
+                    }
+                    Toast.makeText(
+                        this,
+                        "Endereço não encontrado no mapa. O evento será salvo sem localização",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                gravar(dados, cap)
+            }
+        }.start()
+    }
+
+    private fun gravar(dados: HashMap<String, Any>, cap: Int) {
         if (eventId.isEmpty()) {
             dados["vagas"] = cap
             dados["organizadorId"] = uid
@@ -196,6 +231,23 @@ class EventFormActivity : AppCompatActivity() {
             }
                 .addOnSuccessListener { terminar("Evento atualizado!") }
                 .addOnFailureListener { falhar(it.message) }
+        }
+    }
+
+    // Procura as coordenadas do endereço no OpenStreetMap (Nominatim). Chamar fora da thread principal
+    private fun buscarCoordenadas(endereco: String): Pair<Double, Double>? {
+        return try {
+            val consulta = URLEncoder.encode(endereco, "UTF-8")
+            val url = URL("https://nominatim.openstreetmap.org/search?q=$consulta&format=json&limit=1")
+            val con = url.openConnection() as HttpURLConnection
+            con.setRequestProperty("User-Agent", "CampusHub/1.0 (projeto da faculdade)")
+            con.connectTimeout = 4000
+            con.readTimeout = 4000
+            val resposta = con.inputStream.bufferedReader().use { it.readText() }
+            con.disconnect()
+            Geocoding.parse(resposta)
+        } catch (e: Exception) {
+            null
         }
     }
 

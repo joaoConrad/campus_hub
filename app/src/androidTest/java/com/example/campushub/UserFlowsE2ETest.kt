@@ -146,8 +146,7 @@ class UserFlowsE2ETest {
                 .perform(scrollTo(), typeText("30"), closeSoftKeyboard())
             onView(withId(R.id.btnSalvar)).perform(scrollTo(), click())
 
-            // o evento aparece na lista
-            esperar { onView(withText("Evento criado E2E")).check(matches(isDisplayed())) }
+            esperar(25_000) { onView(withText("Evento criado E2E")).check(matches(isDisplayed())) }
 
             // e foi salvo certo no banco
             val resultado = Tasks.await(
