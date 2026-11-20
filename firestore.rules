@@ -2,15 +2,33 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function ehOrganizador() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tipo', 'aluno') == 'organizador';
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.tipo == 'aluno';
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tipo']);
+      allow delete: if false;
     }
 
     match /events/{eventId} {
       allow read: if request.auth != null;
+      allow create: if request.auth != null && ehOrganizador()
+                    && request.resource.data.organizadorId == request.auth.uid;
       allow update: if request.auth != null
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vagas'])
-                    && request.resource.data.vagas >= 0;
+                    && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vagas', 'fila'])
+                         && request.resource.data.vagas is int
+                         && request.resource.data.vagas >= 0
+                         && request.resource.data.get('fila', 0) is int
+                         && request.resource.data.get('fila', 0) >= 0)
+                        || (ehOrganizador()
+                            && resource.data.organizadorId == request.auth.uid
+                            && request.resource.data.organizadorId == resource.data.organizadorId
+                            && request.resource.data.vagas >= 0));
     }
 
     match /registrations/{regId} {
@@ -19,9 +37,24 @@ service cloud.firestore {
                     && regId == request.auth.uid + '_' + request.resource.data.eventId;
       allow read: if request.auth != null
                   && (regId.matches(request.auth.uid + '_.*')
-                      || resource.data.userId == request.auth.uid);
+                      || resource.data.userId == request.auth.uid
+                      || (ehOrganizador()
+                          && get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.organizadorId == request.auth.uid));
+      allow update: if request.auth != null
+                    && ehOrganizador()
+                    && get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.organizadorId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkin']);
       allow delete: if request.auth != null
                     && regId.matches(request.auth.uid + '_.*');
+    }
+
+    match /waitlist/{waitId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && waitId == request.auth.uid + '_' + request.resource.data.eventId;
+      allow delete: if request.auth != null
+                    && waitId.matches(request.auth.uid + '_.*');
     }
 
     match /favorites/{favId} {
@@ -39,19 +72,20 @@ service cloud.firestore {
                 && request.resource.data.autorId == request.auth.uid;
       allow update, delete: if request.auth != null
                 && resource.data.autorId == request.auth.uid;
-   }
+    }
 
-   match /ratings/{ratingId} {
-  allow read: if request.auth != null;
-  allow create, update: if request.auth != null
-    && request.resource.data.userId == request.auth.uid
-    && ratingId == request.auth.uid + '_' + request.resource.data.eventId
-    && request.resource.data.nota is int
-    && request.resource.data.nota >= 1
-    && request.resource.data.nota <= 5
-    && exists(/databases/$(database)/documents/registrations/$(ratingId))
-    && get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.dataHora < request.time;
-  allow delete: if false;
-}
+    match /ratings/{ratingId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && ratingId == request.auth.uid + '_' + request.resource.data.eventId
+        && request.resource.data.nota is int
+        && request.resource.data.nota >= 1
+        && request.resource.data.nota <= 5
+        && exists(/databases/$(database)/documents/registrations/$(ratingId))
+        && (get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.dataHora < request.time
+            || get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.get('status', 'publicado') == 'encerrado');
+      allow delete: if false;
+    }
   }
 }
