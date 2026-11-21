@@ -10,9 +10,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
-import java.text.SimpleDateFormat
-import java.util.Locale
 import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
@@ -26,6 +23,8 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import android.widget.ImageView
+import android.widget.FrameLayout
+import java.io.File
 
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
@@ -80,6 +79,10 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var btnInscritos: Button
     private lateinit var imgEvento: ImageView
     private var organizador = false
+
+    private lateinit var postAdapter: PostAdapter
+    private lateinit var postRepository: PostRepository
+    private lateinit var tvNenhumaPublicacao: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,6 +151,7 @@ class EventDetailsActivity : AppCompatActivity() {
 
         verificarFavorito()
         configurarComentarios()
+        configurarPublicacoes()
         configurarAvaliacao()
         configurarMapa()
     }
@@ -447,6 +451,80 @@ class EventDetailsActivity : AppCompatActivity() {
             .setPositiveButton("Excluir") { _, _ ->
                 db.collection("comments").document(c.id).delete()
                     .addOnSuccessListener { carregarComentarios() }
+                    .addOnFailureListener { erro ->
+                        Toast.makeText(this, "Erro ao excluir: ${erro.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun configurarPublicacoes() {
+        postRepository = PostRepository(db)
+        tvNenhumaPublicacao = findViewById(R.id.tvNenhumaPublicacao)
+
+        postAdapter = PostAdapter(
+            uid,
+            { post -> excluirPost(post) },
+            { post, container -> mostrarConteudoPost(post, container) }
+        )
+        val recycler = findViewById<RecyclerView>(R.id.recyclerPublicacoes)
+        recycler.layoutManager = LinearLayoutManager(this)
+        recycler.adapter = postAdapter
+
+        carregarPublicacoes()
+    }
+
+    private fun carregarPublicacoes() {
+        db.collection("posts")
+            .whereEqualTo("eventId", eventId)
+            .get()
+            .addOnSuccessListener { resultado ->
+                val lista = resultado.toObjects(Post::class.java)
+                    .sortedByDescending { it.data?.seconds ?: Long.MAX_VALUE }
+                postAdapter.atualizar(lista)
+                tvNenhumaPublicacao.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+            }
+            .addOnFailureListener { erro ->
+                Toast.makeText(this, "Erro ao carregar publicações: ${erro.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    // Por enquanto só avisa onde está o arquivo; fotos, vídeos e áudios entram aqui nos próximos passos
+    private fun mostrarConteudoPost(post: Post, container: FrameLayout) {
+        container.removeAllViews()
+        val aviso = TextView(this)
+        aviso.text = if (File(post.caminho).exists()) {
+            "${Posts.rotulo(post.tipo)} salvo neste aparelho"
+        } else {
+            "${Posts.rotulo(post.tipo)} disponível só no aparelho do autor"
+        }
+        container.addView(aviso)
+    }
+
+    // Usada pelos passos de foto, vídeo e áudio pra publicar o arquivo já salvo no aparelho
+    private fun publicarPost(tipo: String, caminho: String) {
+        val erro = Posts.validate(tipo, caminho)
+        if (erro != null) {
+            Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
+            return
+        }
+        postRepository.publish(eventId, tipo, uid, nomeUsuario, caminho)
+            .addOnSuccessListener { carregarPublicacoes() }
+            .addOnFailureListener { erro2 ->
+                Toast.makeText(this, "Erro ao publicar: ${erro2.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    private fun excluirPost(post: Post) {
+        if (!Posts.podeExcluir(post.autorId, uid)) return
+
+        AlertDialog.Builder(this)
+            .setTitle("Excluir publicação")
+            .setMessage("Deseja excluir esta publicação?")
+            .setPositiveButton("Excluir") { _, _ ->
+                postRepository.delete(post)
+                    .addOnSuccessListener { carregarPublicacoes() }
                     .addOnFailureListener { erro ->
                         Toast.makeText(this, "Erro ao excluir: ${erro.message}", Toast.LENGTH_LONG).show()
                     }
