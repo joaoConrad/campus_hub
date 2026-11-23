@@ -26,6 +26,12 @@ import android.widget.ImageView
 import android.widget.FrameLayout
 import java.io.File
 
+import android.net.Uri
+import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+
+
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
 class EventDetailsActivity : AppCompatActivity() {
 
@@ -83,6 +89,11 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var postAdapter: PostAdapter
     private lateinit var postRepository: PostRepository
     private lateinit var tvNenhumaPublicacao: TextView
+
+    private lateinit var btnTirarFoto: Button
+    private lateinit var btnFotoGaleria: Button
+
+    private var arquivoCamera: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -154,6 +165,45 @@ class EventDetailsActivity : AppCompatActivity() {
         configurarPublicacoes()
         configurarAvaliacao()
         configurarMapa()
+    }
+
+    private val escolherFoto = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+
+        if (uri != null) {
+            publicarFoto(uri)
+        }
+    }
+
+    // Tirar foto utilizando a câmera
+    private val tirarFoto = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { sucesso ->
+
+        val arquivo = arquivoCamera
+
+        if (sucesso && arquivo != null && arquivo.exists()
+            && arquivo.length() > 0) {
+
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                arquivo
+            )
+
+            publicarFoto(uri)
+
+        } else {
+            Toast.makeText(
+                this,
+                "Foto cancelada",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        arquivo?.delete()
+        arquivoCamera = null
     }
 
     private fun carregarEvento() {
@@ -677,4 +727,113 @@ class EventDetailsActivity : AppCompatActivity() {
         super.onPause()
         if (::mapaEvento.isInitialized) mapaEvento.onPause()
     }
+
+
+    private fun abrirCamera() {
+
+        try {
+            val pasta = File(cacheDir, "capturas")
+            pasta.mkdirs()
+
+            val arquivo = File.createTempFile(
+                "foto_",
+                ".jpg",
+                pasta
+            )
+
+            arquivoCamera = arquivo
+
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                arquivo
+            )
+
+            tirarFoto.launch(uri)
+
+        } catch (e: Exception) {
+
+            arquivoCamera?.delete()
+            arquivoCamera = null
+
+            Toast.makeText(
+                this,
+                "Erro ao abrir câmera: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+
+    private fun publicarFoto(uri: Uri) {
+
+        val imagem = try {
+            ImageUtils.toBase64(this, uri)
+        } catch (e: Exception) {
+            null
+        }
+
+        if (imagem.isNullOrBlank()) {
+            Toast.makeText(
+                this,
+                "Não foi possível processar a imagem",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        btnTirarFoto.isEnabled = false
+        btnFotoGaleria.isEnabled = false
+
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { documento ->
+
+                val autor = documento.getString("nome")
+                    ?.takeIf { it.isNotBlank() }
+                    ?: nomeUsuario
+
+                postRepository.publishPhoto(
+                    eventId,
+                    uid,
+                    autor,
+                    imagem
+                ).addOnCompleteListener { tarefa ->
+
+                    btnTirarFoto.isEnabled = true
+                    btnFotoGaleria.isEnabled = true
+
+                    if (tarefa.isSuccessful) {
+
+                        Toast.makeText(
+                            this,
+                            "Foto publicada!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        carregarPublicacoes()
+
+                    } else {
+
+                        Toast.makeText(
+                            this,
+                            "Erro ao publicar: ${tarefa.exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .addOnFailureListener { erro ->
+
+                btnTirarFoto.isEnabled = true
+                btnFotoGaleria.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    "Erro ao carregar autor: ${erro.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+    }
+
+
 }
