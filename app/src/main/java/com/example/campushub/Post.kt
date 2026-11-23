@@ -10,6 +10,7 @@ data class Post(
     val autorId: String = "",
     val autorNome: String = "",
     val caminho: String = "",
+    val imagem: String = "",
     val data: Timestamp? = null
 )
 

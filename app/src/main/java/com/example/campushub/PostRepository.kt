@@ -23,7 +23,35 @@ class PostRepository(private val db: FirebaseFirestore) {
         )
 
     // apaga a publicação e, depois, o arquivo guardado no aparelho
+
     fun delete(post: Post): Task<Void> =
         db.collection("posts").document(post.id).delete()
-            .addOnSuccessListener { File(post.caminho).delete() }
+            .addOnSuccessListener {
+                if (post.caminho.isNotBlank()) {
+                    File(post.caminho).delete()
+                }
+            }
+
+
+
+
+    fun publishPhoto(
+        eventId: String,
+        autorId: String,
+        autorNome: String,
+        imagem: String
+    ): Task<DocumentReference> {
+
+        return db.collection("posts").add(
+            hashMapOf(
+                "eventId" to eventId,
+                "tipo" to PostType.FOTO,
+                "autorId" to autorId,
+                "autorNome" to autorNome,
+                "imagem" to imagem,
+                "data" to FieldValue.serverTimestamp()
+            )
+        )
+    }
+
 }
