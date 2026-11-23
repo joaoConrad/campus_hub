@@ -101,6 +101,14 @@ class EventDetailsActivity : AppCompatActivity() {
         Configuration.getInstance().userAgentValue = "CampusHub/1.0 (trabalho academico URI Santiago)"
         setContentView(R.layout.activity_event_details)
 
+
+        savedInstanceState
+            ?.getString("arquivoCamera")
+            ?.let { caminho ->
+                arquivoCamera = File(caminho)
+            }
+
+
         db = FirebaseFirestore.getInstance()
         registrations = RegistrationRepository(db)
 
@@ -509,21 +517,44 @@ class EventDetailsActivity : AppCompatActivity() {
             .show()
     }
 
+
     private fun configurarPublicacoes() {
+
         postRepository = PostRepository(db)
-        tvNenhumaPublicacao = findViewById(R.id.tvNenhumaPublicacao)
+
+        tvNenhumaPublicacao =
+            findViewById(R.id.tvNenhumaPublicacao)
+
+        btnTirarFoto = findViewById(R.id.btnTirarFoto)
+        btnFotoGaleria = findViewById(R.id.btnFotoGaleria)
+
+        // Botão para abrir a câmera
+        btnTirarFoto.setOnClickListener {
+            abrirCamera()
+        }
+
+        // Botão para escolher foto da galeria
+        btnFotoGaleria.setOnClickListener {
+            escolherFoto.launch("image/*")
+        }
 
         postAdapter = PostAdapter(
             uid,
             { post -> excluirPost(post) },
-            { post, container -> mostrarConteudoPost(post, container) }
+            { post, container ->
+                mostrarConteudoPost(post, container)
+            }
         )
-        val recycler = findViewById<RecyclerView>(R.id.recyclerPublicacoes)
+
+        val recycler =
+            findViewById<RecyclerView>(R.id.recyclerPublicacoes)
+
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = postAdapter
 
         carregarPublicacoes()
     }
+
 
     private fun carregarPublicacoes() {
         db.collection("posts")
@@ -540,17 +571,62 @@ class EventDetailsActivity : AppCompatActivity() {
             }
     }
 
-    // Por enquanto só avisa onde está o arquivo; fotos, vídeos e áudios entram aqui nos próximos passos
-    private fun mostrarConteudoPost(post: Post, container: FrameLayout) {
+
+    private fun mostrarConteudoPost(
+        post: Post,
+        container: FrameLayout
+    ) {
+
         container.removeAllViews()
-        val aviso = TextView(this)
-        aviso.text = if (File(post.caminho).exists()) {
-            "${Posts.rotulo(post.tipo)} salvo neste aparelho"
-        } else {
-            "${Posts.rotulo(post.tipo)} disponível só no aparelho do autor"
+
+        if (post.tipo == PostType.FOTO) {
+
+            val bitmap = ImageUtils.toBitmap(
+                post.imagem,
+                600
+            )
+
+            if (bitmap != null) {
+
+                val imagem = ImageView(this)
+
+                val altura = (
+                        220 * resources.displayMetrics.density
+                        ).toInt()
+
+                imagem.layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    altura
+                )
+
+                imagem.scaleType =
+                    ImageView.ScaleType.CENTER_CROP
+
+                imagem.setImageBitmap(bitmap)
+
+                container.addView(imagem)
+                return
+            }
         }
+
+        // Mensagem temporária para outros tipos de publicação
+        val aviso = TextView(this)
+
+        aviso.text = when {
+            post.tipo == PostType.FOTO ->
+                "Foto indisponível"
+
+            post.caminho.isNotBlank() &&
+                    File(post.caminho).exists() ->
+                "${Posts.rotulo(post.tipo)} salvo neste aparelho"
+
+            else ->
+                "${Posts.rotulo(post.tipo)} disponível só no aparelho do autor"
+        }
+
         container.addView(aviso)
     }
+
 
     // Usada pelos passos de foto, vídeo e áudio pra publicar o arquivo já salvo no aparelho
     private fun publicarPost(tipo: String, caminho: String) {
@@ -834,6 +910,16 @@ class EventDetailsActivity : AppCompatActivity() {
                 ).show()
             }
     }
+
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(
+            "arquivoCamera",
+            arquivoCamera?.absolutePath
+        )
+        super.onSaveInstanceState(outState)
+    }
+
 
 
 }
