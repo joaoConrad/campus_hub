@@ -212,6 +212,31 @@
         </LinearLayout>
 
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnGravarAudio"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Gravar áudio" />
+
+            <Button
+                android:id="@+id/btnCancelarAudio"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Cancelar gravação"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+
+
         <TextView
             android:id="@+id/tvNenhumaPublicacao"
             android:layout_width="wrap_content"

@@ -25,11 +25,21 @@ import org.osmdroid.views.overlay.Marker
 import android.widget.ImageView
 import android.widget.FrameLayout
 import java.io.File
-
 import android.net.Uri
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
+import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
+import android.widget.LinearLayout
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import java.io.FileInputStream
+
 
 
 // Tela de detalhes: recebe o id de um evento, busca ele no Firestore e mostra os dados
@@ -94,6 +104,140 @@ class EventDetailsActivity : AppCompatActivity() {
     private lateinit var btnFotoGaleria: Button
 
     private var arquivoCamera: File? = null
+
+    private lateinit var btnGravarAudio: Button
+    private lateinit var btnCancelarAudio: Button
+
+    private var gravadorAudio: MediaRecorder? = null
+    private var arquivoAudio: File? = null
+    private var gravandoAudio = false
+
+    private var playerAudio: MediaPlayer? = null
+
+    private val handlerAudio = Handler(Looper.getMainLooper())
+
+    private val limiteAudio = Runnable {
+        if (gravandoAudio) {
+            finalizarGravacaoAudio(true)
+        }
+    }
+
+
+    private val permissaoMicrofone = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { permitido ->
+
+        if (permitido) {
+            iniciarGravacaoAudio()
+        } else {
+            Toast.makeText(
+                this,
+                "Permissão do microfone negada",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+
+    private fun alternarGravacaoAudio() {
+
+        if (gravandoAudio) {
+            finalizarGravacaoAudio(true)
+            return
+        }
+
+        val permissao = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        )
+
+        if (permissao == PackageManager.PERMISSION_GRANTED) {
+            iniciarGravacaoAudio()
+        } else {
+            permissaoMicrofone.launch(
+                Manifest.permission.RECORD_AUDIO
+            )
+        }
+    }
+
+
+    private fun iniciarGravacaoAudio() {
+
+        if (gravandoAudio) return
+
+        var novoGravador: MediaRecorder? = null
+        var novoArquivo: File? = null
+
+        try {
+            val pasta = File(filesDir, "audios")
+            if (!pasta.exists() && !pasta.mkdirs()) {
+                throw IllegalStateException(
+                    "Não foi possível criar a pasta de áudios"
+                )
+            }
+
+            val arquivo = File.createTempFile(
+                "audio_${uid}_",
+                ".m4a",
+                pasta
+            )
+
+            novoArquivo = arquivo
+
+            val recorder = MediaRecorder(this)
+            novoGravador = recorder
+
+            recorder.setAudioSource(
+                MediaRecorder.AudioSource.MIC
+            )
+
+            recorder.setOutputFormat(
+                MediaRecorder.OutputFormat.MPEG_4
+            )
+
+            recorder.setAudioEncoder(
+                MediaRecorder.AudioEncoder.AAC
+            )
+
+            recorder.setAudioEncodingBitRate(64000)
+            recorder.setAudioSamplingRate(44100)
+
+            recorder.setOutputFile(arquivo.absolutePath)
+
+            recorder.prepare()
+            recorder.start()
+
+            gravadorAudio = recorder
+            arquivoAudio = arquivo
+            gravandoAudio = true
+
+            handlerAudio.postDelayed(
+                limiteAudio,
+                30_000L
+            )
+
+            atualizarBotoesAudio()
+
+            Toast.makeText(
+                this,
+                "Gravando áudio...",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        } catch (e: Exception) {
+
+            runCatching { novoGravador?.release() }
+            novoArquivo?.delete()
+
+            Toast.makeText(
+                this,
+                "Erro ao gravar áudio: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
