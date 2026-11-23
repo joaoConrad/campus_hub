@@ -888,19 +888,51 @@ class EventDetailsActivity : AppCompatActivity() {
     }
 
 
-    // Usada pelos passos de foto, vídeo e áudio pra publicar o arquivo já salvo no aparelho
+
     private fun publicarPost(tipo: String, caminho: String) {
+
         val erro = Posts.validate(tipo, caminho)
+
         if (erro != null) {
-            Toast.makeText(this, erro, Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                erro,
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
-        postRepository.publish(eventId, tipo, uid, nomeUsuario, caminho)
-            .addOnSuccessListener { carregarPublicacoes() }
+
+        postRepository.publish(
+            eventId,
+            tipo,
+            uid,
+            nomeUsuario,
+            caminho
+        )
+            .addOnSuccessListener {
+
+                Toast.makeText(
+                    this,
+                    "Publicação realizada!",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                carregarPublicacoes()
+            }
             .addOnFailureListener { erro2 ->
-                Toast.makeText(this, "Erro ao publicar: ${erro2.message}", Toast.LENGTH_LONG).show()
+
+                if (tipo == PostType.AUDIO) {
+                    arquivoAudioLocal(caminho)?.delete()
+                }
+
+                Toast.makeText(
+                    this,
+                    "Erro ao publicar: ${erro2.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
     }
+
 
     private fun excluirPost(post: Post) {
         if (!Posts.podeExcluir(post.autorId, uid)) return
@@ -1269,7 +1301,15 @@ class EventDetailsActivity : AppCompatActivity() {
         playerAudio = null
     }
 
+    override fun onStop() {
+        if (gravandoAudio) {
+            finalizarGravacaoAudio(false)
+        }
 
+        pararReproducaoAudio()
+
+        super.onStop()
+    }
 
 
 }

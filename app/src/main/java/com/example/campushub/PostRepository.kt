@@ -33,8 +33,6 @@ class PostRepository(private val db: FirebaseFirestore) {
             }
 
 
-
-
     fun publishPhoto(
         eventId: String,
         autorId: String,
@@ -53,5 +51,4 @@ class PostRepository(private val db: FirebaseFirestore) {
             )
         )
     }
-
-}
+    }
