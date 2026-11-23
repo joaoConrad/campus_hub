@@ -36,7 +36,6 @@ import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
 import android.widget.LinearLayout
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import java.io.FileInputStream
 
@@ -236,6 +235,63 @@ class EventDetailsActivity : AppCompatActivity() {
             ).show()
         }
     }
+
+
+    private fun finalizarGravacaoAudio(publicar: Boolean) {
+
+        if (!gravandoAudio) return
+
+        handlerAudio.removeCallbacks(limiteAudio)
+
+        gravandoAudio = false
+
+        val recorder = gravadorAudio
+        val arquivo = arquivoAudio
+
+        gravadorAudio = null
+        arquivoAudio = null
+
+        var gravacaoValida = false
+
+        try {
+            recorder?.stop()
+            gravacaoValida = recorder != null
+
+        } catch (e: RuntimeException) {
+            Toast.makeText(
+                this,
+                "Gravação muito curta ou inválida",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        } finally {
+            recorder?.release()
+        }
+
+        atualizarBotoesAudio()
+
+        if (!publicar) {
+            arquivo?.delete()
+            return
+        }
+
+        if (
+            gravacaoValida &&
+            arquivo != null &&
+            arquivo.exists() &&
+            arquivo.length() > 0L
+        ) {
+
+            publicarPost(
+                PostType.AUDIO,
+                arquivo.absolutePath
+            )
+
+        } else {
+            arquivo?.delete()
+        }
+    }
+
 
 
 
@@ -682,6 +738,21 @@ class EventDetailsActivity : AppCompatActivity() {
             escolherFoto.launch("image/*")
         }
 
+
+        btnGravarAudio = findViewById(R.id.btnGravarAudio)
+        btnCancelarAudio = findViewById(R.id.btnCancelarAudio)
+
+        btnGravarAudio.setOnClickListener {
+            alternarGravacaoAudio()
+        }
+
+        btnCancelarAudio.setOnClickListener {
+            finalizarGravacaoAudio(false)
+        }
+
+        atualizarBotoesAudio()
+
+
         postAdapter = PostAdapter(
             uid,
             { post -> excluirPost(post) },
@@ -722,6 +793,51 @@ class EventDetailsActivity : AppCompatActivity() {
     ) {
 
         container.removeAllViews()
+
+
+        if (post.tipo == PostType.AUDIO) {
+
+            val arquivo = arquivoAudioLocal(post.caminho)
+
+            if (arquivo != null) {
+
+                val controles = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                }
+
+                val btnReproduzir = Button(this).apply {
+                    text = "Reproduzir"
+
+                    setOnClickListener {
+                        reproduzirAudio(post)
+                    }
+                }
+
+                val btnParar = Button(this).apply {
+                    text = "Parar"
+
+                    setOnClickListener {
+                        pararReproducaoAudio()
+                    }
+                }
+
+                controles.addView(btnReproduzir)
+                controles.addView(btnParar)
+
+                container.addView(controles)
+
+            } else {
+
+                val aviso = TextView(this).apply {
+                    text = "Áudio disponível apenas no aparelho do autor"
+                }
+
+                container.addView(aviso)
+            }
+
+            return
+        }
+
 
         if (post.tipo == PostType.FOTO) {
 
@@ -1063,6 +1179,96 @@ class EventDetailsActivity : AppCompatActivity() {
         )
         super.onSaveInstanceState(outState)
     }
+
+
+    private fun atualizarBotoesAudio() {
+
+        btnGravarAudio.text = if (gravandoAudio) {
+            "Parar e publicar"
+        } else {
+            "Gravar áudio"
+        }
+
+        btnCancelarAudio.visibility = if (gravandoAudio) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+    }
+
+
+    private fun arquivoAudioLocal(caminho: String): File? {
+
+        if (caminho.isBlank()) return null
+
+        return runCatching {
+
+            val pasta = File(
+                filesDir,
+                "audios"
+            ).canonicalFile
+
+            val arquivo = File(caminho).canonicalFile
+
+            arquivo.takeIf {
+                it.parentFile == pasta && it.isFile
+            }
+
+        }.getOrNull()
+    }
+
+
+    private fun reproduzirAudio(post: Post) {
+
+        val arquivo = arquivoAudioLocal(post.caminho)
+
+        if (arquivo == null) {
+            Toast.makeText(
+                this,
+                "Áudio não disponível neste aparelho",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        pararReproducaoAudio()
+
+        val player = MediaPlayer()
+
+        try {
+
+            FileInputStream(arquivo).use { entrada ->
+                player.setDataSource(entrada.fd)
+                player.prepare()
+            }
+
+            player.setOnCompletionListener {
+                pararReproducaoAudio()
+            }
+
+            playerAudio = player
+            player.start()
+
+        } catch (e: Exception) {
+
+            playerAudio = null
+            player.release()
+
+            Toast.makeText(
+                this,
+                "Erro ao reproduzir áudio: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+
+    private fun pararReproducaoAudio() {
+
+        playerAudio?.release()
+        playerAudio = null
+    }
+
 
 
 
