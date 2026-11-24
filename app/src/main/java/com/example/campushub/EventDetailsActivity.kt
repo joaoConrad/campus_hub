@@ -823,6 +823,101 @@ class EventDetailsActivity : AppCompatActivity() {
         container.removeAllViews()
 
 
+        if (post.tipo == PostType.VIDEO) {
+
+            val arquivo = arquivoVideoLocal(post.caminho)
+
+            if (arquivo == null) {
+
+                val aviso = TextView(this).apply {
+                    text = "Vídeo disponível apenas no aparelho do autor"
+                }
+
+                container.addView(aviso)
+                return
+            }
+
+            val layout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+            val video = VideoView(this).apply {
+
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    (220 * resources.displayMetrics.density).toInt()
+                )
+
+                visibility = View.GONE
+            }
+
+            val btnAssistir = Button(this).apply {
+                text = "Assistir vídeo"
+            }
+
+            btnAssistir.setOnClickListener {
+
+                if (video.visibility != View.VISIBLE) {
+
+                    pararVideoAtivo()
+
+                    videoAtivo = video
+                    botaoVideoAtivo = btnAssistir
+
+                    video.visibility = View.VISIBLE
+
+                    val controles = MediaController(this)
+
+                    controles.setAnchorView(video)
+                    video.setMediaController(controles)
+
+                    video.setOnPreparedListener {
+
+                        video.start()
+                        controles.show(3000)
+                        btnAssistir.text = "Pausar vídeo"
+                    }
+
+                    video.setOnCompletionListener {
+                        btnAssistir.text = "Reproduzir novamente"
+                    }
+
+                    video.setOnErrorListener { _, _, _ ->
+                        btnAssistir.text = "Erro ao reproduzir"
+
+                        Toast.makeText(
+                            this,
+                            "Não foi possível reproduzir o vídeo",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        true
+                    }
+
+                    video.setVideoPath(arquivo.absolutePath)
+
+                } else if (video.isPlaying) {
+
+                    video.pause()
+                    btnAssistir.text = "Continuar vídeo"
+
+                } else {
+
+                    video.start()
+                    btnAssistir.text = "Pausar vídeo"
+                }
+            }
+
+            layout.addView(video)
+            layout.addView(btnAssistir)
+
+            container.addView(layout)
+
+            return
+        }
+
+
+
         if (post.tipo == PostType.AUDIO) {
 
             val arquivo = arquivoAudioLocal(post.caminho)
@@ -1579,12 +1674,45 @@ class EventDetailsActivity : AppCompatActivity() {
     }
 
 
+    private fun arquivoVideoLocal(caminho: String): File? {
+
+        if (caminho.isBlank()) return null
+
+        return runCatching {
+
+            val pasta = File(
+                filesDir,
+                "videos"
+            ).canonicalFile
+
+            val arquivo = File(caminho).canonicalFile
+
+            arquivo.takeIf {
+                it.parentFile == pasta && it.isFile
+            }
+
+        }.getOrNull()
+    }
+
+
+    private fun pararVideoAtivo() {
+
+        videoAtivo?.stopPlayback()
+        videoAtivo?.visibility = View.GONE
+
+        botaoVideoAtivo?.text = "Assistir vídeo"
+
+        videoAtivo = null
+        botaoVideoAtivo = null
+    }
+
     override fun onStop() {
         if (gravandoAudio) {
             finalizarGravacaoAudio(false)
         }
 
         pararReproducaoAudio()
+        pararVideoAtivo()
 
         super.onStop()
     }
