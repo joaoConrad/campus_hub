@@ -38,6 +38,10 @@ import android.os.Looper
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import java.io.FileInputStream
+import android.media.MediaMetadataRetriever
+import android.widget.VideoView
+import android.widget.MediaController
+import java.io.IOException
 
 
 
@@ -106,6 +110,15 @@ class EventDetailsActivity : AppCompatActivity() {
 
     private lateinit var btnGravarAudio: Button
     private lateinit var btnCancelarAudio: Button
+
+    private lateinit var btnGravarVideo: Button
+    private lateinit var btnVideoGaleria: Button
+
+    private var arquivoVideoCamera: File? = null
+    private var processandoVideo = false
+
+    private var videoAtivo: VideoView? = null
+    private var botaoVideoAtivo: Button? = null
 
     private var gravadorAudio: MediaRecorder? = null
     private var arquivoAudio: File? = null
@@ -1300,6 +1313,88 @@ class EventDetailsActivity : AppCompatActivity() {
         playerAudio?.release()
         playerAudio = null
     }
+
+    // Selecionar vídeo existente
+    private val escolherVideo = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+
+        if (uri != null) {
+            importarVideo(uri)
+        }
+    }
+
+    // Gravar vídeo com a câmera
+    private val capturarVideo = registerForActivityResult(
+        ActivityResultContracts.CaptureVideo()
+    ) { sucesso ->
+
+        val arquivo = arquivoVideoCamera
+        arquivoVideoCamera = null
+
+        if (sucesso && arquivo != null &&
+            arquivo.exists() && arquivo.length() > 0L) {
+
+            importarVideo(
+                Uri.fromFile(arquivo),
+                arquivo
+            )
+
+        } else {
+
+            arquivo?.delete()
+
+            Toast.makeText(
+                this,
+                "Gravação cancelada ou inválida",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+
+    private fun abrirCameraVideo() {
+
+        if (processandoVideo) return
+
+        try {
+            val pasta = File(cacheDir, "capturas")
+
+            if (!pasta.exists() && !pasta.mkdirs()) {
+                throw IOException(
+                    "Não foi possível criar a pasta temporária"
+                )
+            }
+
+            val arquivo = File.createTempFile(
+                "video_",
+                ".mp4",
+                pasta
+            )
+
+            arquivoVideoCamera = arquivo
+
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                arquivo
+            )
+
+            capturarVideo.launch(uri)
+
+        } catch (e: Exception) {
+
+            arquivoVideoCamera?.delete()
+            arquivoVideoCamera = null
+
+            Toast.makeText(
+                this,
+                "Erro ao abrir câmera: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
 
     override fun onStop() {
         if (gravandoAudio) {
