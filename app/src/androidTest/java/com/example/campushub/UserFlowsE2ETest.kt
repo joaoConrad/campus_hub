@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -135,7 +136,7 @@ class UserFlowsE2ETest {
 
             // formulário
             onView(withId(R.id.editTitulo)).perform(typeText("Evento criado E2E"), closeSoftKeyboard())
-            onView(withId(R.id.editDescricao)).perform(typeText("Descrição do teste"), closeSoftKeyboard())
+            onView(withId(R.id.editDescricao)).perform(replaceText("Descrição do teste"), closeSoftKeyboard())
             onView(withId(R.id.btnData)).perform(scrollTo(), click())
             onView(withClassName(equalTo(DatePicker::class.java.name)))
                 .perform(PickerActions.setDate(proximoAno, 6, 15))
@@ -146,7 +147,18 @@ class UserFlowsE2ETest {
                 .perform(scrollTo(), typeText("30"), closeSoftKeyboard())
             onView(withId(R.id.btnSalvar)).perform(scrollTo(), click())
 
-            esperar(25_000) { onView(withText("Evento criado E2E")).check(matches(isDisplayed())) }
+
+            esperar(25_000) {
+                onView(withId(R.id.recyclerEventos))
+                    .check(
+                        matches(
+                            hasDescendant(
+                                withText("Evento criado E2E")
+                            )
+                        )
+                    )
+            }
+
 
             // e foi salvo certo no banco
             val resultado = Tasks.await(
