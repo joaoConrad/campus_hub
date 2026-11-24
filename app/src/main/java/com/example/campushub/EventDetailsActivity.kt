@@ -766,6 +766,21 @@ class EventDetailsActivity : AppCompatActivity() {
         atualizarBotoesAudio()
 
 
+        btnGravarVideo = findViewById(R.id.btnGravarVideo)
+        btnVideoGaleria = findViewById(R.id.btnVideoGaleria)
+
+        btnGravarVideo.setOnClickListener {
+            abrirCameraVideo()
+        }
+
+        btnVideoGaleria.setOnClickListener {
+            escolherVideo.launch("video/*")
+        }
+
+        atualizarBotoesVideo()
+
+
+
         postAdapter = PostAdapter(
             uid,
             { post -> excluirPost(post) },
@@ -1393,6 +1408,174 @@ class EventDetailsActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             ).show()
         }
+    }
+
+
+    private fun importarVideo(
+        uri: Uri,
+        temporario: File? = null
+    ) {
+
+        if (processandoVideo) {
+            temporario?.delete()
+            return
+        }
+
+        processandoVideo = true
+        atualizarBotoesVideo()
+
+        Thread {
+
+            var destino: File? = null
+
+            try {
+                val pasta = File(filesDir, "videos")
+
+                if (!pasta.exists() && !pasta.mkdirs()) {
+                    throw IOException(
+                        "Não foi possível criar a pasta de vídeos"
+                    )
+                }
+
+                val arquivo = File.createTempFile(
+                    "video_${uid}_",
+                    ".mp4",
+                    pasta
+                )
+
+                destino = arquivo
+
+                val limiteBytes = 30L * 1024 * 1024
+
+                val entrada = contentResolver.openInputStream(uri)
+                    ?: throw IOException("Vídeo não encontrado")
+
+                entrada.use { origem ->
+                    arquivo.outputStream().use { saida ->
+
+                        val buffer = ByteArray(8192)
+                        var total = 0L
+
+                        while (true) {
+                            val lidos = origem.read(buffer)
+
+                            if (lidos == -1) break
+
+                            total += lidos
+
+                            if (total > limiteBytes) {
+                                throw IOException(
+                                    "O vídeo deve ter no máximo 30 MB"
+                                )
+                            }
+
+                            saida.write(buffer, 0, lidos)
+                        }
+                    }
+                }
+
+                if (arquivo.length() == 0L) {
+                    throw IOException("Vídeo vazio")
+                }
+
+                // Verificar duração
+                val retriever = MediaMetadataRetriever()
+
+                val duracao = try {
+                    retriever.setDataSource(
+                        arquivo.absolutePath
+                    )
+
+                    retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_DURATION
+                    )?.toLongOrNull()
+
+                } finally {
+                    retriever.release()
+                }
+
+                if (duracao == null ||
+                    duracao <= 0L ||
+                    duracao > 30_000L) {
+
+                    throw IOException(
+                        "O vídeo deve ter no máximo 30 segundos"
+                    )
+                }
+
+                runOnUiThread {
+
+                    if (isFinishing || isDestroyed) {
+                        arquivo.delete()
+                        processandoVideo = false
+                        atualizarBotoesVideo()
+                        return@runOnUiThread
+                    }
+
+                    postRepository.publish(
+                        eventId,
+                        PostType.VIDEO,
+                        uid,
+                        nomeUsuario,
+                        arquivo.absolutePath
+                    )
+                        .addOnSuccessListener {
+
+                            processandoVideo = false
+                            atualizarBotoesVideo()
+
+                            Toast.makeText(
+                                this,
+                                "Vídeo publicado!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            carregarPublicacoes()
+                        }
+                        .addOnFailureListener { erro ->
+
+                            arquivo.delete()
+
+                            processandoVideo = false
+                            atualizarBotoesVideo()
+
+                            Toast.makeText(
+                                this,
+                                "Erro ao publicar: ${erro.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                }
+
+            } catch (e: Exception) {
+
+                destino?.delete()
+
+                runOnUiThread {
+
+                    processandoVideo = false
+                    atualizarBotoesVideo()
+
+                    Toast.makeText(
+                        this,
+                        "Erro no vídeo: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+            } finally {
+                temporario?.delete()
+            }
+
+        }.start()
+    }
+
+
+    private fun atualizarBotoesVideo() {
+
+        btnGravarVideo.isEnabled = !processandoVideo
+        btnVideoGaleria.isEnabled = !processandoVideo
+
     }
 
 
