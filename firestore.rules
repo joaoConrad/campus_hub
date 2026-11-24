@@ -87,7 +87,7 @@ service cloud.firestore {
             || get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.get('status', 'publicado') == 'encerrado');
       allow delete: if false;
     }
-  }
+
 
 
 match /posts/{postId} {
@@ -116,4 +116,5 @@ match /posts/{postId} {
     && resource.data.autorId == request.auth.uid;
 }
 
+}
 }
