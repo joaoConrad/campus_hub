@@ -314,6 +314,11 @@ class EventDetailsActivity : AppCompatActivity() {
         Configuration.getInstance().userAgentValue = "CampusHub/1.0 (trabalho academico URI Santiago)"
         setContentView(R.layout.activity_event_details)
 
+        savedInstanceState
+            ?.getString("arquivoVideoCamera")
+            ?.let { caminho ->
+                arquivoVideoCamera = File(caminho)
+            }
 
         savedInstanceState
             ?.getString("arquivoCamera")
@@ -806,6 +811,9 @@ class EventDetailsActivity : AppCompatActivity() {
             .addOnSuccessListener { resultado ->
                 val lista = resultado.toObjects(Post::class.java)
                     .sortedByDescending { it.data?.seconds ?: Long.MAX_VALUE }
+
+                pararVideoAtivo()
+
                 postAdapter.atualizar(lista)
                 tvNenhumaPublicacao.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
             }
@@ -1331,6 +1339,11 @@ class EventDetailsActivity : AppCompatActivity() {
         outState.putString(
             "arquivoCamera",
             arquivoCamera?.absolutePath
+        )
+
+        outState.putString(
+            "arquivoVideoCamera",
+            arquivoVideoCamera?.absolutePath
         )
         super.onSaveInstanceState(outState)
     }
